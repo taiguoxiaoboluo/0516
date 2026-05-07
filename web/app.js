@@ -21,21 +21,35 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
   hideResult();
 
   try {
-    const response = await fetch('/api/sniff', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: url.startsWith('http') ? url : 'https://' + url,
-        darkMode: document.getElementById('optDarkMode').checked,
-        mobile: document.getElementById('optMobile').checked
-      })
+    const reqBody = JSON.stringify({
+      url: url.startsWith('http') ? url : 'https://' + url,
+      darkMode: document.getElementById('optDarkMode').checked,
+      mobile: document.getElementById('optMobile').checked
     });
 
-    if (!response.ok) throw new Error('提取失败');
+    // 自动重试（最多 2 次）
+    let response, lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        response = await fetch('/api/sniff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+        if (response.ok) break;
+        lastError = new Error('服务端返回 ' + response.status);
+      } catch (fetchErr) {
+        lastError = fetchErr;
+        if (attempt < 2) {
+          btn.textContent = '重试中（' + (attempt + 2) + '/3）…';
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+    }
+
+    if (!response || !response.ok) throw lastError || new Error('提取失败');
     const result = await response.json();
+    if (result.error) throw new Error(result.error);
     displayResult(result);
   } catch (error) {
-    showToast('错误：' + error.message);
+    const msg = error.message === 'Failed to fetch' ? '无法连接服务器，请确认服务已启动（node web/server.js）' : error.message;
+    showToast('错误：' + msg);
   } finally {
     showLoading(false);
     btn.disabled = false;

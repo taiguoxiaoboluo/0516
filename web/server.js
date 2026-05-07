@@ -56,3 +56,11 @@ server.listen(PORT, () => {
   console.log(`\n🐕‍🦺 Style Sniffer Web UI`);
   console.log(`   http://localhost:${PORT}\n`);
 });
+
+// 防止未捕获异常导致进程退出
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err.message);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err);
+});
