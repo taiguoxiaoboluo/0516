@@ -315,13 +315,15 @@ function renderTypography(profile) {
   });
 
   if (typo.scale) {
+    const previewSizes = { display: '32px', h1: '28px', heading_1: '28px', h2: '22px', heading_2: '22px', h3: '18px', heading_3: '18px', body: '16px', body_small: '14px', caption: '12px' };
     Object.entries(typo.scale).forEach(([level, values]) => {
       if (!values || typeof values !== 'object') return;
+      const previewSize = previewSizes[level] || '16px';
       const div = document.createElement('div');
       div.className = 'typo-preview';
       div.innerHTML =
-        '<div class="typo-label">' + level + ' — ' + (values.size || '') + ' / ' + (values.weight || '') + '</div>' +
-        '<div class="typo-sample" style="font-size:' + (values.size || '16px') + ';font-weight:' + (values.weight || '400') + ';">示例文本</div>';
+        '<div class="typo-label">' + level + ' — 原始值：' + (values.size || '-') + ' / 字重：' + (values.weight || '-') + ' / 行高：' + (values.line_height || '-') + '</div>' +
+        '<div class="typo-sample" style="font-size:' + previewSize + ';font-weight:' + (values.weight || '400') + ';">示例文本 Sample Text</div>';
       container.appendChild(div);
     });
   }
