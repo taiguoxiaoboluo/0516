@@ -861,3 +861,23 @@ function showToast(message) {
 document.getElementById('urlInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('sniffBtn').click();
 });
+
+// ===== Prompt Dual Column Scroll Sync =====
+(function initPromptScrollSync() {
+  const cnPanel = document.getElementById('promptOutputCN');
+  const enPanel = document.getElementById('promptOutputEN');
+  if (!cnPanel || !enPanel) return;
+
+  let isSyncing = false;
+
+  function syncScroll(source, target) {
+    if (isSyncing) return;
+    isSyncing = true;
+    const scrollRatio = source.scrollTop / (source.scrollHeight - source.clientHeight || 1);
+    target.scrollTop = scrollRatio * (target.scrollHeight - target.clientHeight);
+    isSyncing = false;
+  }
+
+  cnPanel.addEventListener('scroll', () => syncScroll(cnPanel, enPanel));
+  enPanel.addEventListener('scroll', () => syncScroll(enPanel, cnPanel));
+})();
