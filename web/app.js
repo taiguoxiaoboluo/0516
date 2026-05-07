@@ -218,15 +218,8 @@ function generateImageEvidence(img, topColors) {
     const sliceCtx = sliceCanvas.getContext('2d');
     sliceCtx.drawImage(img, 0, startY, naturalW, clipH, 0, 0, naturalW, clipH);
 
-    // 分析该区域的颜色分布
-    const analysisCanvas = document.createElement('canvas');
-    const analysisScale = Math.min(100 / naturalW, 100 / clipH, 1);
-    analysisCanvas.width = Math.floor(naturalW * analysisScale);
-    analysisCanvas.height = Math.floor(clipH * analysisScale);
-    const analysisCtx = analysisCanvas.getContext('2d');
-    analysisCtx.drawImage(sliceCanvas, 0, 0, analysisCanvas.width, analysisCanvas.height);
-    const regionData = analysisCtx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
-    const regionDescriptions = analyzeRegionPixels(regionData, i, sectionCount);
+    // 分析该区域的视觉设计属性
+    const regionDescriptions = analyzeRegionVisuals(sliceCanvas, i, sectionCount);
 
     // 生成 base64 截图（缩小到合理尺寸以节省内存）
     const thumbCanvas = document.createElement('canvas');
@@ -255,83 +248,359 @@ function describeRegionPosition(index, total) {
   return positionNames[Math.min(index - 1, positionNames.length - 1)];
 }
 
-function analyzeRegionPixels(imageData, regionIndex, totalRegions) {
+function analyzeRegionVisuals(sliceCanvas, regionIndex, totalRegions) {
+  const width = sliceCanvas.width;
+  const height = sliceCanvas.height;
+  const ctx = sliceCanvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, width, height);
   const pixels = imageData.data;
-  const totalPixels = pixels.length / 4;
+  const totalPixels = width * height;
   const descriptions = [];
 
-  // 统计颜色
+  // ===== 1. 色彩体系提取 =====
   const colorBuckets = new Map();
-  let totalBrightness = 0;
-  let totalSaturation = 0;
+  const hueHistogram = new Array(12).fill(0); // 12个色相区间（每30°）
+  let totalBrightness = 0, totalSaturation = 0;
+  let warmCount = 0, coolCount = 0, neutralCount = 0;
 
   for (let i = 0; i < pixels.length; i += 4) {
     const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
-    const qr = Math.round(r / 32) * 32;
-    const qg = Math.round(g / 32) * 32;
-    const qb = Math.round(b / 32) * 32;
-    const key = qr + ',' + qg + ',' + qb;
-    colorBuckets.set(key, (colorBuckets.get(key) || 0) + 1);
-
+    const qr = Math.round(r / 24) * 24;
+    const qg = Math.round(g / 24) * 24;
+    const qb = Math.round(b / 24) * 24;
+    colorBuckets.set(qr + ',' + qg + ',' + qb, (colorBuckets.get(qr + ',' + qg + ',' + qb) || 0) + 1);
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     totalBrightness += brightness;
-
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const saturation = max === 0 ? 0 : (max - min) / max;
-    totalSaturation += saturation;
+    const sat = max === 0 ? 0 : (max - min) / max;
+    totalSaturation += sat;
+    if (sat > 0.15) {
+      const hue = rgbToHue(r, g, b);
+      hueHistogram[Math.floor(hue / 30) % 12]++;
+      if (hue < 60 || hue > 300) warmCount++;
+      else if (hue >= 120 && hue <= 270) coolCount++;
+      else neutralCount++;
+    } else {
+      neutralCount++;
+    }
   }
 
-  const avgBrightness = totalBrightness / totalPixels;
-  const avgSaturation = totalSaturation / totalPixels;
+  const avgBri = totalBrightness / totalPixels;
+  const avgSat = totalSaturation / totalPixels;
 
-  // 主色提取
-  const sortedColors = Array.from(colorBuckets.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const regionTopColors = sortedColors.map(([key, count]) => {
+  // 提取 Top 色板
+  const sortedColors = Array.from(colorBuckets.entries()).sort((a, b) => b[1] - a[1]);
+  const paletteColors = [];
+  sortedColors.forEach(([key, count]) => {
     const [r, g, b] = key.split(',').map(Number);
     const hex = '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
-    return { hex, percent: ((count / totalPixels) * 100).toFixed(1) };
+    const tooClose = paletteColors.some(p => colorDistance(p.r, p.g, p.b, r, g, b) < 50);
+    if (!tooClose && paletteColors.length < 8) paletteColors.push({ r, g, b, hex, count });
   });
 
-  // 亮度描述
-  const brightnessLabel = avgBrightness > 200 ? '高亮度（浅色/白色基调）' : avgBrightness > 140 ? '中等亮度' : avgBrightness > 80 ? '中低亮度' : '低亮度（深色/暗色基调）';
-  descriptions.push('**亮度**: ' + brightnessLabel + '，均值 ' + avgBrightness.toFixed(0) + '/255');
+  const colorSwatches = paletteColors.slice(0, 6).map(c => '`' + c.hex + '` (' + ((c.count / totalPixels) * 100).toFixed(1) + '%)').join(' · ');
+  descriptions.push('**🎨 色板**: ' + colorSwatches);
 
-  // 饱和度描述
-  const satLabel = avgSaturation > 0.5 ? '高饱和度（色彩鲜艳丰富）' : avgSaturation > 0.25 ? '中等饱和度' : avgSaturation > 0.1 ? '低饱和度（偏灰调/中性色）' : '极低饱和度（接近黑白/灰阶）';
-  descriptions.push('**饱和度**: ' + satLabel + '，均值 ' + (avgSaturation * 100).toFixed(1) + '%');
+  const toneLabel = warmCount > coolCount * 1.5 ? '暖色调为主（橙/红/黄）' : coolCount > warmCount * 1.5 ? '冷色调为主（蓝/青/紫）' : '冷暖均衡 / 中性色调';
+  descriptions.push('**🌡️ 色温**: ' + toneLabel);
 
-  // 主色分布
-  const colorDesc = regionTopColors.slice(0, 3).map(c => '`' + c.hex + '` (' + c.percent + '%)').join('、');
-  descriptions.push('**主色分布**: ' + colorDesc);
+  const bgHex = paletteColors[0]?.hex || '#ffffff';
+  const bgBri = hexBrightness(bgHex);
+  descriptions.push('**🖼️ 底色**: `' + bgHex + '`（' + (bgBri > 200 ? '浅色底' : bgBri > 100 ? '中间调底' : '深色底') + '），整体明度 ' + avgBri.toFixed(0) + '/255');
 
-  // 颜色丰富度
-  const colorVariety = colorBuckets.size;
-  const varietyLabel = colorVariety > 50 ? '丰富（渐变/图片较多）' : colorVariety > 20 ? '中等' : '简洁（大面积纯色/单色）';
-  descriptions.push('**色彩丰富度**: ' + varietyLabel + '（' + colorVariety + ' 个色系）');
-
-  // 对比度分析
-  if (sortedColors.length >= 2) {
-    const [topKey] = sortedColors[0];
-    const [secKey] = sortedColors[sortedColors.length > 1 ? 1 : 0];
-    const [tr, tg, tb] = topKey.split(',').map(Number);
-    const [sr, sg, sb] = secKey.split(',').map(Number);
-    const topBri = (tr * 299 + tg * 587 + tb * 114) / 1000;
-    const secBri = (sr * 299 + sg * 587 + sb * 114) / 1000;
-    const contrastDiff = Math.abs(topBri - secBri);
-    const contrastLabel = contrastDiff > 150 ? '高对比（明暗分明）' : contrastDiff > 80 ? '中等对比' : '低对比（色调柔和接近）';
-    descriptions.push('**区域对比度**: ' + contrastLabel);
-  }
-
-  // 区域位置特征推断
-  if (regionIndex === 0) {
-    descriptions.push('**布局推断**: 此区域位于页面顶部，通常包含 **导航栏、Hero Banner、品牌标识** 等元素');
-  } else if (regionIndex === totalRegions - 1) {
-    descriptions.push('**布局推断**: 此区域位于页面底部，通常包含 **Footer、联系信息、版权声明** 等元素');
+  // ===== 2. 渐变检测 =====
+  const gradientInfo = detectGradient(pixels, width, height);
+  if (gradientInfo.hasGradient) {
+    descriptions.push('**🌈 渐变**: 检测到 **' + gradientInfo.direction + '渐变**，从 `' + gradientInfo.startColor + '` → `' + gradientInfo.endColor + '`' + (gradientInfo.type ? '，类型: ' + gradientInfo.type : ''));
   } else {
-    descriptions.push('**布局推断**: 此区域为页面主体内容区，通常包含 **核心功能展示、产品介绍、CTA 区块** 等元素');
+    descriptions.push('**🌈 渐变**: 未检测到明显渐变，以 **纯色/平铺** 为主');
   }
+
+  // ===== 3. 边缘与圆角检测 =====
+  const edgeInfo = detectEdgesAndCorners(pixels, width, height);
+  descriptions.push('**📐 边缘**: 边缘密度 **' + edgeInfo.density + '**（' + edgeInfo.densityLabel + '），' + (edgeInfo.hasStraightLines ? '存在**直线边缘**（矩形/卡片/分割线）' : '以**柔和曲线**为主'));
+  descriptions.push('**🔲 圆角推断**: ' + edgeInfo.cornerDescription);
+
+  // ===== 4. 投影与阴影检测 =====
+  const shadowInfo = detectShadows(pixels, width, height, avgBri);
+  descriptions.push('**🌑 投影/阴影**: ' + shadowInfo.description);
+
+  // ===== 5. 纹理与肌理检测 =====
+  const textureInfo = detectTexture(pixels, width, height);
+  descriptions.push('**🧱 肌理/纹理**: ' + textureInfo.description);
+
+  // ===== 6. 文字区域检测 =====
+  const textInfo = detectTextRegions(pixels, width, height, avgBri);
+  descriptions.push('**🔤 文字特征**: ' + textInfo.description);
+
+  // ===== 7. 边框检测 =====
+  const borderInfo = detectBorders(pixels, width, height);
+  descriptions.push('**🔳 边框**: ' + borderInfo.description);
+
+  // ===== 8. 色彩丰富度与风格推断 =====
+  const activeHues = hueHistogram.filter(h => h > totalPixels * 0.01).length;
+  const paletteStyle = activeHues <= 2 ? '**单色/双色系**（极简/克制）' : activeHues <= 4 ? '**有限色板**（' + activeHues + ' 色相，设计感强）' : '**多彩色板**（' + activeHues + ' 色相，丰富活泼）';
+  descriptions.push('**🎭 色彩风格**: ' + paletteStyle + '，饱和度均值 ' + (avgSat * 100).toFixed(0) + '%' + (avgSat > 0.4 ? '（鲜艳）' : avgSat > 0.2 ? '（适中）' : '（低调/灰调）'));
 
   return descriptions;
+}
+
+// ===== 辅助函数：RGB 转 Hue =====
+function rgbToHue(r, g, b) {
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (max === min) return 0;
+  let hue;
+  if (max === r) hue = 60 * ((g - b) / (max - min));
+  else if (max === g) hue = 60 * (2 + (b - r) / (max - min));
+  else hue = 60 * (4 + (r - g) / (max - min));
+  return hue < 0 ? hue + 360 : hue;
+}
+
+function colorDistance(r1, g1, b1, r2, g2, b2) {
+  return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+}
+
+// ===== 渐变检测 =====
+function detectGradient(pixels, width, height) {
+  // 采样顶部、中部、底部横条的平均颜色
+  const sampleRow = (y) => {
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    for (let x = 0; x < width; x += 3) {
+      const idx = (y * width + x) * 4;
+      rSum += pixels[idx]; gSum += pixels[idx + 1]; bSum += pixels[idx + 2]; count++;
+    }
+    return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
+  };
+  const sampleCol = (x) => {
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    for (let y = 0; y < height; y += 3) {
+      const idx = (y * width + x) * 4;
+      rSum += pixels[idx]; gSum += pixels[idx + 1]; bSum += pixels[idx + 2]; count++;
+    }
+    return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
+  };
+
+  const topRow = sampleRow(Math.floor(height * 0.1));
+  const midRow = sampleRow(Math.floor(height * 0.5));
+  const botRow = sampleRow(Math.floor(height * 0.9));
+  const leftCol = sampleCol(Math.floor(width * 0.1));
+  const rightCol = sampleCol(Math.floor(width * 0.9));
+
+  const vertDist = colorDistance(topRow.r, topRow.g, topRow.b, botRow.r, botRow.g, botRow.b);
+  const horizDist = colorDistance(leftCol.r, leftCol.g, leftCol.b, rightCol.r, rightCol.g, rightCol.b);
+
+  const toHex = (c) => '#' + [c.r, c.g, c.b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
+
+  if (vertDist > 60) {
+    return { hasGradient: true, direction: '垂直', startColor: toHex(topRow), endColor: toHex(botRow), type: vertDist > 120 ? '强渐变' : '柔和渐变' };
+  }
+  if (horizDist > 60) {
+    return { hasGradient: true, direction: '水平', startColor: toHex(leftCol), endColor: toHex(rightCol), type: horizDist > 120 ? '强渐变' : '柔和渐变' };
+  }
+  return { hasGradient: false };
+}
+
+// ===== 边缘与圆角检测 =====
+function detectEdgesAndCorners(pixels, width, height) {
+  // Sobel 边缘检测（采样）
+  let edgeCount = 0, totalSampled = 0;
+  let horizontalEdges = 0, verticalEdges = 0;
+  const step = Math.max(2, Math.floor(Math.min(width, height) / 80));
+
+  for (let y = 1; y < height - 1; y += step) {
+    for (let x = 1; x < width - 1; x += step) {
+      const idx = (y * width + x) * 4;
+      const idxL = (y * width + (x - 1)) * 4;
+      const idxR = (y * width + (x + 1)) * 4;
+      const idxU = ((y - 1) * width + x) * 4;
+      const idxD = ((y + 1) * width + x) * 4;
+      const gx = Math.abs((pixels[idxR] + pixels[idxR + 1] + pixels[idxR + 2]) - (pixels[idxL] + pixels[idxL + 1] + pixels[idxL + 2]));
+      const gy = Math.abs((pixels[idxD] + pixels[idxD + 1] + pixels[idxD + 2]) - (pixels[idxU] + pixels[idxU + 1] + pixels[idxU + 2]));
+      const magnitude = Math.sqrt(gx * gx + gy * gy);
+      if (magnitude > 80) {
+        edgeCount++;
+        if (gx > gy * 1.5) verticalEdges++;
+        else if (gy > gx * 1.5) horizontalEdges++;
+      }
+      totalSampled++;
+    }
+  }
+
+  const edgeRatio = edgeCount / totalSampled;
+  const density = edgeRatio > 0.25 ? 'high' : edgeRatio > 0.1 ? 'medium' : 'low';
+  const densityLabel = density === 'high' ? '复杂界面，元素密集' : density === 'medium' ? '适中，有清晰的区块划分' : '简洁，大面积留白或纯色';
+  const hasStraightLines = (horizontalEdges + verticalEdges) > edgeCount * 0.4;
+
+  // 圆角推断：检测角落区域的边缘分布
+  const cornerSize = Math.floor(Math.min(width, height) * 0.08);
+  let cornerSoftness = 0;
+  const checkCorner = (cx, cy) => {
+    let soft = 0, total = 0;
+    for (let dy = -cornerSize; dy <= cornerSize; dy += step) {
+      for (let dx = -cornerSize; dx <= cornerSize; dx += step) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < cornerSize * 0.3 || dist > cornerSize) continue;
+        const idx = (ny * width + nx) * 4;
+        const bri = (pixels[idx] * 299 + pixels[idx + 1] * 587 + pixels[idx + 2] * 114) / 1000;
+        if (Math.abs(bri - 255) < 30 || Math.abs(bri) < 30) soft++;
+        total++;
+      }
+    }
+    return total > 0 ? soft / total : 0;
+  };
+
+  // 检测图中央区域是否有圆角矩形特征
+  const roundedFeatures = hasStraightLines && edgeRatio > 0.08;
+  let cornerDescription;
+  if (density === 'low') {
+    cornerDescription = '元素较少，圆角不明显。画面以 **大面积色块/图片** 为主';
+  } else if (roundedFeatures) {
+    cornerDescription = '检测到**矩形元素**。结合边缘柔和度推断圆角约 **8-16px**（中等圆角，现代 UI 风格）';
+  } else {
+    cornerDescription = '边缘以**曲线/不规则形状**为主，可能使用 **大圆角（16px+）或椭圆/圆形** 元素';
+  }
+
+  return { density, densityLabel, hasStraightLines, cornerDescription };
+}
+
+// ===== 投影/阴影检测 =====
+function detectShadows(pixels, width, height, avgBrightness) {
+  // 检测亮度渐变区域（阴影特征：从深到浅的柔和过渡）
+  let shadowTransitions = 0;
+  const step = Math.max(2, Math.floor(width / 60));
+
+  for (let y = 2; y < height - 2; y += step * 3) {
+    for (let x = 2; x < width - 2; x += step) {
+      const idx = (y * width + x) * 4;
+      const idxNext = (y * width + (x + step)) * 4;
+      const idxBelow = ((y + step) * width + x) * 4;
+      if (idxNext >= pixels.length || idxBelow >= pixels.length) continue;
+      const bri1 = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
+      const bri2 = (pixels[idxNext] + pixels[idxNext + 1] + pixels[idxNext + 2]) / 3;
+      const bri3 = (pixels[idxBelow] + pixels[idxBelow + 1] + pixels[idxBelow + 2]) / 3;
+      // 阴影特征：小幅度亮度渐变（5-30的差异，不是硬边缘）
+      const hDiff = Math.abs(bri1 - bri2);
+      const vDiff = Math.abs(bri1 - bri3);
+      if ((hDiff > 5 && hDiff < 30) || (vDiff > 5 && vDiff < 30)) shadowTransitions++;
+    }
+  }
+
+  const shadowRatio = shadowTransitions / (width * height / (step * step * 3));
+  if (shadowRatio > 0.4) {
+    return { description: '大量**柔和阴影/投影**，推断 CSS: `box-shadow: 0 4px 20px rgba(0,0,0,0.08~0.15)`，**Material/Neumorphism** 风格' };
+  } else if (shadowRatio > 0.15) {
+    return { description: '存在**适量投影**，推断 CSS: `box-shadow: 0 2px 8px rgba(0,0,0,0.06~0.12)`，现代卡片式设计' };
+  } else {
+    return { description: '投影极少或无，**扁平化设计**风格，元素分隔靠 **颜色/间距/边框** 而非阴影' };
+  }
+}
+
+// ===== 纹理/肌理检测 =====
+function detectTexture(pixels, width, height) {
+  // 高频噪点检测：相邻像素的变化频率
+  let highFreqCount = 0;
+  let totalChecked = 0;
+  const step = Math.max(2, Math.floor(width / 80));
+
+  for (let y = 0; y < height - 1; y += step) {
+    for (let x = 0; x < width - 1; x += step) {
+      const idx1 = (y * width + x) * 4;
+      const idx2 = (y * width + x + 1) * 4;
+      const idx3 = ((y + 1) * width + x) * 4;
+      const diff1 = Math.abs(pixels[idx1] - pixels[idx2]) + Math.abs(pixels[idx1 + 1] - pixels[idx2 + 1]) + Math.abs(pixels[idx1 + 2] - pixels[idx2 + 2]);
+      const diff2 = Math.abs(pixels[idx1] - pixels[idx3]) + Math.abs(pixels[idx1 + 1] - pixels[idx3 + 1]) + Math.abs(pixels[idx1 + 2] - pixels[idx3 + 2]);
+      if (diff1 > 15 && diff1 < 80 && diff2 > 15 && diff2 < 80) highFreqCount++;
+      totalChecked++;
+    }
+  }
+
+  const textureRatio = highFreqCount / totalChecked;
+  if (textureRatio > 0.5) {
+    return { description: '强烈的**表面肌理/纹理**（磨砂、纸张、噪点、grain），适合 CSS: `background-image: url(noise.svg)` 或 `filter: contrast(1.1) grayscale(0.1)`' };
+  } else if (textureRatio > 0.25) {
+    return { description: '存在**轻微纹理**（可能是图片/插画/微妙 grain），适合 `background-blend-mode` 或轻噪点叠加' };
+  } else {
+    return { description: '**光滑/无纹理**，纯色填充为主，适合 CSS: 纯 `background-color` 或 `linear-gradient`' };
+  }
+}
+
+// ===== 文字区域检测 =====
+function detectTextRegions(pixels, width, height, avgBri) {
+  // 检测高对比度细线条区域（文字特征）
+  let textLikePixels = 0;
+  let totalChecked = 0;
+  let darkTextOnLight = 0, lightTextOnDark = 0;
+  const step = Math.max(2, Math.floor(width / 80));
+
+  for (let y = 1; y < height - 1; y += step) {
+    for (let x = 1; x < width - 1; x += step) {
+      const idx = (y * width + x) * 4;
+      const bri = (pixels[idx] * 299 + pixels[idx + 1] * 587 + pixels[idx + 2] * 114) / 1000;
+      // 检查与周围像素的对比
+      const neighbors = [
+        ((y - 1) * width + x) * 4, ((y + 1) * width + x) * 4,
+        (y * width + x - 1) * 4, (y * width + x + 1) * 4
+      ];
+      let highContrastNeighbors = 0;
+      neighbors.forEach(ni => {
+        if (ni >= 0 && ni < pixels.length) {
+          const nBri = (pixels[ni] * 299 + pixels[ni + 1] * 587 + pixels[ni + 2] * 114) / 1000;
+          if (Math.abs(bri - nBri) > 60) highContrastNeighbors++;
+        }
+      });
+      if (highContrastNeighbors >= 2) {
+        textLikePixels++;
+        if (bri < 100) darkTextOnLight++;
+        else lightTextOnDark++;
+      }
+      totalChecked++;
+    }
+  }
+
+  const textDensity = textLikePixels / totalChecked;
+  const textStyle = darkTextOnLight > lightTextOnDark ? '深色文字 on 浅色底' : '浅色/白色文字 on 深色底';
+  if (textDensity > 0.15) {
+    return { description: '**文字密集区域**，' + textStyle + '。推断：标题粗体（700+）+ 正文常规（400），建议 `font-size` 标题 24-36px / 正文 14-16px' };
+  } else if (textDensity > 0.05) {
+    return { description: '**适量文字**，' + textStyle + '。推断：大标题主导设计，字号跨度大（Display 48px+ / Body 14-16px）' };
+  } else {
+    return { description: '**文字稀少**，以视觉图形/图片为主。推断：标题可能是**超大艺术字体**或嵌入图片中' };
+  }
+}
+
+// ===== 边框检测 =====
+function detectBorders(pixels, width, height) {
+  // 检测沿水平/垂直方向的单像素或窄条色变
+  let borderLikeSegments = 0;
+  let totalChecked = 0;
+  const step = Math.max(3, Math.floor(height / 40));
+
+  for (let y = 2; y < height - 2; y += step) {
+    for (let x = 5; x < width - 5; x += 4) {
+      const idx = (y * width + x) * 4;
+      const above = ((y - 1) * width + x) * 4;
+      const below = ((y + 1) * width + x) * 4;
+      const briC = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
+      const briA = (pixels[above] + pixels[above + 1] + pixels[above + 2]) / 3;
+      const briB = (pixels[below] + pixels[below + 1] + pixels[below + 2]) / 3;
+      // 边框特征：当前行与上下行有明显差异，但上下行彼此接近
+      if (Math.abs(briC - briA) > 40 && Math.abs(briC - briB) > 40 && Math.abs(briA - briB) < 20) {
+        borderLikeSegments++;
+      }
+      totalChecked++;
+    }
+  }
+
+  const borderRatio = borderLikeSegments / totalChecked;
+  if (borderRatio > 0.08) {
+    return { description: '存在**明显分割线/边框**，推断 CSS: `border: 1px solid rgba(0,0,0,0.1)` 或 `border-bottom: 1px solid #e5e7eb`，**线性分割**风格' };
+  } else if (borderRatio > 0.02) {
+    return { description: '**少量边框/分割线**，推断 CSS: `border: 1px solid` 用于卡片或输入框，整体偏**无边框/阴影分隔**' };
+  } else {
+    return { description: '**几乎无边框**，元素间以 **间距、阴影、色差** 分隔，**无边框设计 (Borderless)**' };
+  }
 }
 
 function hexBrightness(hex) {
