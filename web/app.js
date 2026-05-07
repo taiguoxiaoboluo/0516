@@ -324,7 +324,7 @@ function renderTypography(profile) {
       div.className = 'typo-preview';
       div.innerHTML =
         '<div class="typo-label">' + level + ' — 原始值：' + (values.size || '-') + ' / 字重：' + (values.weight || '-') + ' / 行高：' + (values.line_height || '-') + '</div>' +
-        '<div class="typo-sample" style="font-size:' + previewSize + ';font-weight:' + (values.weight || '400') + ';">示例文本 Sample Text</div>';
+        '<div class="typo-sample" style="font-size:' + previewSize + ';font-weight:' + (values.weight || '400') + ';">风格嗅探器 Style Sniffer</div>';
       container.appendChild(div);
     });
   }
