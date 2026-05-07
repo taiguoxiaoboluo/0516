@@ -8,6 +8,16 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
+// ===== 检测是否有后端服务器（GitHub Pages 模式 vs 本地模式）=====
+const isStaticMode = location.protocol === 'file:' || location.hostname.includes('github.io') || location.hostname.includes('pages.dev');
+
+(function initUrlTab() {
+  const urlNotice = document.getElementById('urlServerNotice');
+  if (isStaticMode && urlNotice) {
+    urlNotice.hidden = false;
+  }
+})();
+
 // ===== URL Sniff =====
 document.getElementById('sniffBtn').addEventListener('click', async () => {
   const url = document.getElementById('urlInput').value.trim();
@@ -48,8 +58,11 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
     if (result.error) throw new Error(result.error);
     displayResult(result);
   } catch (error) {
-    const msg = error.message === 'Failed to fetch' ? '无法连接服务器，请确认服务已启动（node web/server.js）' : error.message;
-    showToast('错误：' + msg);
+    if (error.message === 'Failed to fetch' || isStaticMode) {
+      showToast('⚠️ URL 嗅探需要本地服务器。请使用「图片/截图」功能，或本地运行 node web/server.js');
+    } else {
+      showToast('错误：' + error.message);
+    }
   } finally {
     showLoading(false);
     btn.disabled = false;

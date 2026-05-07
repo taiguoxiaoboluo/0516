@@ -2,6 +2,7 @@ import { createServer } from 'http';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { networkInterfaces } from 'os';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -52,9 +53,15 @@ const server = createServer(async (req, res) => {
   res.end(content);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🐕‍🦺 Style Sniffer Web UI`);
-  console.log(`   http://localhost:${PORT}\n`);
+  console.log(`   本机：http://localhost:${PORT}`);
+  // 获取内网 IP 方便分享
+  const nets = networkInterfaces();
+  Object.values(nets).flat().filter(n => n.family === 'IPv4' && !n.internal).forEach(n => {
+    console.log(`   内网：http://${n.address}:${PORT}`);
+  });
+  console.log('');
 });
 
 // 防止未捕获异常导致进程退出
