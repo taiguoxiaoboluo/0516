@@ -253,7 +253,8 @@ function displayResult(profile) {
   renderEvidence(profile);
 
   document.getElementById('jsonOutput').textContent = JSON.stringify(profile, null, 2);
-  document.getElementById('promptOutput').textContent = generatePromptText(profile);
+  document.getElementById('promptOutputCN').textContent = generatePromptText(profile);
+  document.getElementById('promptOutputEN').textContent = generatePromptTextEN(profile);
 
   document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -409,33 +410,390 @@ function formatDesc(text) {
   return escaped;
 }
 
-// ===== Generate Prompt Text =====
+// ===== Generate Prompt Text (Chinese) =====
 function generatePromptText(profile) {
-  let text = '';
-  const tokens = profile.design_tokens || {};
+  const p = profile;
+  const tokens = p.design_tokens || {};
   const colors = tokens.colors || {};
   const typo = tokens.typography || {};
+  const radius = tokens.radius || {};
+  const shadows = tokens.shadows || {};
+  const borders = tokens.borders || {};
+  const motion = tokens.motion || {};
+  const style = p.design_style || {};
+  const aesthetic = style.aesthetic || {};
+  const visual = style.visual_language || {};
+  const composition = style.composition || {};
+  const imagery = style.imagery || {};
+  const interaction = style.interaction_feel || {};
+  const effects = p.visual_effects || {};
+  const components = p.component_styles || {};
+  const guide = p.usage_guide || {};
+  const philosophy = p.design_philosophy || {};
 
-  text += '# 设计哲学\n\n';
-  text += (profile.design_philosophy?.core_essence || '提取的设计画像') + '\n\n';
+  const name = p.meta?.name || '未知网站';
+  const vibeList = philosophy.vibe?.length ? philosophy.vibe.join('、') : '现代、简洁';
+  const dnaList = philosophy.visual_dna?.length ? philosophy.visual_dna.join('、') : '';
 
-  if (profile.design_philosophy?.vibe?.length) {
-    text += '调性：' + profile.design_philosophy.vibe.join('、') + '\n\n';
+  let t = '';
+
+  // ── 1. 设计哲学 ──
+  t += '# 设计哲学\n\n';
+  t += '> **"' + (philosophy.core_essence || '从 ' + name + ' 提取的视觉设计身份') + '"**\n\n';
+  t += '该风格体系从 **' + name + '** 的完整页面中提取而来。';
+  t += '整体调性为 **' + vibeList + '**，';
+  t += '视觉语言的复杂度为 **' + (visual.complexity || 'moderate') + '**，';
+  t += '装饰程度为 **' + (visual.ornamentation || 'subtle-accents') + '**。\n\n';
+
+  t += '### 核心原则\n\n';
+  t += '- **视觉 DNA**：' + (dnaList || '纯色块、几何构图、无多余装饰') + '\n';
+  t += '- **留白策略**：' + (visual.whitespace_usage || 'balanced') + '\n';
+  t += '- **对比度**：' + (visual.contrast_level || 'high') + '\n';
+  t += '- **纹理使用**：' + (visual.texture_usage || 'none') + '\n';
+  t += '- **焦点策略**：' + (visual.focal_strategy || '单一 Hero 元素') + '\n';
+  if (aesthetic.genre) t += '- **风格流派**：' + aesthetic.genre + '\n';
+  if (aesthetic.era_influence) t += '- **时代影响**：' + aesthetic.era_influence + '\n';
+  if (aesthetic.mood?.length) t += '- **情绪关键词**：' + aesthetic.mood.join('、') + '\n';
+  if (aesthetic.adjectives?.length) t += '- **形容词**：' + aesthetic.adjectives.join('、') + '\n';
+
+  // ── 2. 设计 Token 系统 ──
+  t += '\n---\n\n# 设计 Token 系统\n\n';
+
+  // 色彩
+  t += '## 色彩\n\n';
+  t += '| Token | 色值 | 用途 |\n|---|---|---|\n';
+  t += '| **背景色** | `' + (colors.background || '#ffffff') + '` | 页面主背景 |\n';
+  t += '| **前景色** | `' + (colors.foreground || '#000000') + '` | 正文文字 |\n';
+  if (colors.primary?.hex) t += '| **主色** | `' + colors.primary.hex + '` | ' + (colors.primary.role || '按钮、链接、高亮') + ' |\n';
+  if (colors.secondary?.hex) t += '| **次色** | `' + colors.secondary.hex + '` | ' + (colors.secondary.role || '辅助元素') + ' |\n';
+  if (colors.accent?.hex) t += '| **强调色** | `' + colors.accent.hex + '` | ' + (colors.accent.role || 'CTA、徽章') + ' |\n';
+  if (colors.muted) t += '| **柔和色** | `' + colors.muted + '` | 次级背景、卡片填充 |\n';
+  if (colors.border) t += '| **边框色** | `' + colors.border + '` | 分隔线、输入框边框 |\n';
+  const semantic = colors.semantic || {};
+  if (semantic.success) t += '| **成功** | `' + semantic.success + '` | 成功状态 |\n';
+  if (semantic.warning) t += '| **警告** | `' + semantic.warning + '` | 警告状态 |\n';
+  if (semantic.error) t += '| **错误** | `' + semantic.error + '` | 错误状态 |\n';
+  t += '\n**色彩策略**：' + (colors.contrast_strategy || '高对比') + '\n';
+  t += '**色板类型**：' + (colors.palette_type || 'custom') + '\n\n';
+
+  // 字体排版
+  t += '## 字体排版\n\n';
+  t += '### 字体栈\n\n';
+  t += '```css\n';
+  t += '/* 标题字体 */\nfont-family: \'' + (typo.heading_font || 'system-ui') + '\', sans-serif;\n\n';
+  t += '/* 正文字体 */\nfont-family: \'' + (typo.body_font || 'system-ui') + '\', sans-serif;\n';
+  if (typo.mono_font) t += '\n/* 等宽字体 */\nfont-family: \'' + typo.mono_font + '\', monospace;\n';
+  t += '```\n\n';
+
+  if (typo.scale && Object.keys(typo.scale).length) {
+    t += '### 字号阶梯\n\n';
+    t += '| 层级 | 字号 | 字重 | 行高 |\n|---|---|---|---|\n';
+    Object.entries(typo.scale).forEach(([level, v]) => {
+      if (v && typeof v === 'object') {
+        t += '| **' + level + '** | `' + (v.size || '-') + '` | ' + (v.weight || '-') + ' | ' + (v.line_height || '-') + ' |\n';
+      }
+    });
+    t += '\n';
+  }
+  if (typo.style_notes) t += '**排版特征**：' + typo.style_notes + '\n\n';
+
+  // 圆角
+  t += '## 圆角与形状\n\n';
+  t += '| 层级 | 值 |\n|---|---|\n';
+  t += '| 小 | `' + (radius.small || '4px') + '` |\n';
+  t += '| 中 | `' + (radius.medium || '8px') + '` |\n';
+  t += '| 大 | `' + (radius.large || '16px') + '` |\n';
+  t += '| 药丸 | `' + (radius.pill || '9999px') + '` |\n';
+  if (radius.philosophy) t += '\n**设计理念**：' + radius.philosophy + '\n';
+  t += '\n';
+
+  // 阴影
+  t += '## 阴影与特效\n\n';
+  t += '**阴影风格**：' + (shadows.style || 'none') + '\n\n';
+  if (shadows.levels) {
+    t += '| 层级 | 值 |\n|---|---|\n';
+    t += '| 低 | `' + (shadows.levels.low || 'none') + '` |\n';
+    t += '| 中 | `' + (shadows.levels.medium || 'none') + '` |\n';
+    t += '| 高 | `' + (shadows.levels.high || 'none') + '` |\n\n';
+  }
+  if (shadows.depth_cues) t += '**深度线索**：' + shadows.depth_cues + '\n\n';
+
+  // 边框
+  t += '## 边框\n\n';
+  t += '- **使用频率**：' + (borders.usage || '无') + '\n';
+  t += '- **边框风格**：' + (borders.style || '无') + '\n';
+  t += '- **分隔线**：' + (borders.divider_style || '留白分隔') + '\n\n';
+
+  // 动效
+  t += '## 动效\n\n';
+  t += '- **缓动函数**：`' + (motion.easing || 'ease') + '`\n';
+  if (motion.duration_scale) {
+    t += '- **微交互**：`' + (motion.duration_scale.micro || '100ms') + '`\n';
+    t += '- **常规过渡**：`' + (motion.duration_scale.normal || '200ms') + '`\n';
+    t += '- **宏观动画**：`' + (motion.duration_scale.macro || '500ms') + '`\n';
+  }
+  if (motion.philosophy) t += '- **动效理念**：' + motion.philosophy + '\n';
+  t += '\n';
+
+  // ── 3. 组件样式 ──
+  t += '---\n\n# 组件样式\n\n';
+  const btn = components.buttons || {};
+  t += '## 按钮\n\n';
+  t += '- **主按钮**：' + (btn.primary || '实色背景 + 白色文字') + '\n';
+  t += '- **次按钮**：' + (btn.secondary || '柔和背景 + 深色文字') + '\n';
+  t += '- **轮廓按钮**：' + (btn.outline || '边框 + 透明背景') + '\n\n';
+
+  const card = components.cards || {};
+  t += '## 卡片\n\n';
+  t += '- **风格**：' + (card.style || '标准') + '\n';
+  t += '- **外观**：' + (card.appearance || '圆角 + 微妙阴影') + '\n';
+  t += '- **交互**：' + (card.interaction || '悬停缩放') + '\n\n';
+
+  const input = components.inputs || {};
+  t += '## 输入框\n\n';
+  t += '- **常态**：' + (input.normal || '标准输入样式') + '\n';
+  t += '- **聚焦**：' + (input.focus || '边框高亮') + '\n\n';
+
+  t += '## 导航\n\n';
+  t += (components.navigation || '顶部导航栏') + '\n\n';
+
+  const sections = components.sections || {};
+  if (sections.divider_style || sections.background_strategy) {
+    t += '## 页面分区\n\n';
+    if (sections.divider_style) t += '- **分隔方式**：' + sections.divider_style + '\n';
+    if (sections.background_strategy) t += '- **背景策略**：' + sections.background_strategy + '\n';
+    t += '\n';
   }
 
-  text += '## 色彩\n\n';
-  text += '| 角色 | 色值 |\n|---|---|\n';
-  text += '| 背景色 | `' + (colors.background || '-') + '` |\n';
-  text += '| 前景色 | `' + (colors.foreground || '-') + '` |\n';
-  if (colors.primary?.hex) text += '| 主色 | `' + colors.primary.hex + '` |\n';
-  if (colors.secondary?.hex) text += '| 次色 | `' + colors.secondary.hex + '` |\n';
-  if (colors.accent?.hex) text += '| 强调色 | `' + colors.accent.hex + '` |\n';
+  // ── 4. 构图与布局 ──
+  t += '---\n\n# 构图与布局\n\n';
+  t += '- **层级方法**：' + (composition.hierarchy_method || '尺寸对比') + '\n';
+  t += '- **平衡类型**：' + (composition.balance_type || '对称') + '\n';
+  t += '- **视觉流向**：' + (composition.flow_direction || '从上到下') + '\n';
+  t += '- **负空间作用**：' + (composition.negative_space_role || '功能性间距') + '\n\n';
 
-  text += '\n## 字体排版\n\n';
-  text += '- 标题字体：' + (typo.heading_font || '-') + '\n';
-  text += '- 正文字体：' + (typo.body_font || '-') + '\n';
+  // ── 5. 视觉特效 ──
+  const efxOverview = effects.overview || {};
+  if (efxOverview.effect_intensity && efxOverview.effect_intensity !== 'none') {
+    t += '---\n\n# 视觉特效\n\n';
+    t += '- **特效强度**：' + efxOverview.effect_intensity + '\n';
+    t += '- **性能层级**：' + (efxOverview.performance_tier || 'lightweight') + '\n';
+    t += '- **主要技术**：' + (efxOverview.primary_technology || 'CSS only') + '\n';
+    if (effects.composite_notes) t += '\n' + effects.composite_notes + '\n';
+    t += '\n';
+  }
 
-  return text;
+  // ── 6. 使用指南 ──
+  if ((guide.do?.length) || (guide.dont?.length) || (guide.signature_traits?.length)) {
+    t += '---\n\n# 使用指南\n\n';
+    if (guide.signature_traits?.length) {
+      t += '### 签名特征\n\n';
+      guide.signature_traits.forEach(trait => { t += '- ' + trait + '\n'; });
+      t += '\n';
+    }
+    if (guide.do?.length) {
+      t += '### ✅ 应该做\n\n';
+      guide.do.forEach(item => { t += '- ' + item + '\n'; });
+      t += '\n';
+    }
+    if (guide.dont?.length) {
+      t += '### ❌ 不应该做\n\n';
+      guide.dont.forEach(item => { t += '- ' + item + '\n'; });
+      t += '\n';
+    }
+  }
+
+  return t;
+}
+
+// ===== Generate Prompt Text (English) =====
+function generatePromptTextEN(profile) {
+  const p = profile;
+  const tokens = p.design_tokens || {};
+  const colors = tokens.colors || {};
+  const typo = tokens.typography || {};
+  const radius = tokens.radius || {};
+  const shadows = tokens.shadows || {};
+  const borders = tokens.borders || {};
+  const motion = tokens.motion || {};
+  const style = p.design_style || {};
+  const aesthetic = style.aesthetic || {};
+  const visual = style.visual_language || {};
+  const composition = style.composition || {};
+  const imagery = style.imagery || {};
+  const interaction = style.interaction_feel || {};
+  const effects = p.visual_effects || {};
+  const components = p.component_styles || {};
+  const guide = p.usage_guide || {};
+  const philosophy = p.design_philosophy || {};
+
+  const name = p.meta?.name || 'Unknown';
+  const vibeList = philosophy.vibe?.length ? philosophy.vibe.join(', ') : 'modern, clean';
+  const dnaList = philosophy.visual_dna?.length ? philosophy.visual_dna.join(', ') : '';
+
+  let t = '';
+
+  // ── 1. Design Philosophy ──
+  t += '# Design Philosophy\n\n';
+  t += '> **"' + (philosophy.core_essence || 'Design identity extracted from ' + name) + '"**\n\n';
+  t += 'This design system is extracted from **' + name + '**. ';
+  t += 'The overall vibe is **' + vibeList + '**, ';
+  t += 'visual complexity is **' + (visual.complexity || 'moderate') + '**, ';
+  t += 'ornamentation level is **' + (visual.ornamentation || 'subtle-accents') + '**.\n\n';
+
+  t += '### Core Principles\n\n';
+  t += '- **Visual DNA**: ' + (dnaList || 'Solid color blocks, geometric composition, no excess decoration') + '\n';
+  t += '- **Whitespace Strategy**: ' + (visual.whitespace_usage || 'balanced') + '\n';
+  t += '- **Contrast Level**: ' + (visual.contrast_level || 'high') + '\n';
+  t += '- **Texture Usage**: ' + (visual.texture_usage || 'none') + '\n';
+  t += '- **Focal Strategy**: ' + (visual.focal_strategy || 'Single hero element') + '\n';
+  if (aesthetic.genre) t += '- **Genre**: ' + aesthetic.genre + '\n';
+  if (aesthetic.era_influence) t += '- **Era Influence**: ' + aesthetic.era_influence + '\n';
+  if (aesthetic.mood?.length) t += '- **Mood Keywords**: ' + aesthetic.mood.join(', ') + '\n';
+  if (aesthetic.adjectives?.length) t += '- **Adjectives**: ' + aesthetic.adjectives.join(', ') + '\n';
+
+  // ── 2. Design Token System ──
+  t += '\n---\n\n# Design Token System\n\n';
+
+  t += '## Colors\n\n';
+  t += '| Token | Value | Usage |\n|---|---|---|\n';
+  t += '| **Background** | `' + (colors.background || '#ffffff') + '` | Primary page background |\n';
+  t += '| **Foreground** | `' + (colors.foreground || '#000000') + '` | Body text |\n';
+  if (colors.primary?.hex) t += '| **Primary** | `' + colors.primary.hex + '` | ' + (colors.primary.role || 'Buttons, links, highlights') + ' |\n';
+  if (colors.secondary?.hex) t += '| **Secondary** | `' + colors.secondary.hex + '` | ' + (colors.secondary.role || 'Supporting elements') + ' |\n';
+  if (colors.accent?.hex) t += '| **Accent** | `' + colors.accent.hex + '` | ' + (colors.accent.role || 'CTAs, badges') + ' |\n';
+  if (colors.muted) t += '| **Muted** | `' + colors.muted + '` | Secondary backgrounds, card fills |\n';
+  if (colors.border) t += '| **Border** | `' + colors.border + '` | Dividers, input borders |\n';
+  const semanticEN = colors.semantic || {};
+  if (semanticEN.success) t += '| **Success** | `' + semanticEN.success + '` | Success state |\n';
+  if (semanticEN.warning) t += '| **Warning** | `' + semanticEN.warning + '` | Warning state |\n';
+  if (semanticEN.error) t += '| **Error** | `' + semanticEN.error + '` | Error state |\n';
+  t += '\n**Contrast Strategy**: ' + (colors.contrast_strategy || 'High contrast') + '\n';
+  t += '**Palette Type**: ' + (colors.palette_type || 'custom') + '\n\n';
+
+  t += '## Typography\n\n';
+  t += '### Font Stack\n\n';
+  t += '```css\n';
+  t += '/* Heading Font */\nfont-family: \'' + (typo.heading_font || 'system-ui') + '\', sans-serif;\n\n';
+  t += '/* Body Font */\nfont-family: \'' + (typo.body_font || 'system-ui') + '\', sans-serif;\n';
+  if (typo.mono_font) t += '\n/* Monospace Font */\nfont-family: \'' + typo.mono_font + '\', monospace;\n';
+  t += '```\n\n';
+
+  if (typo.scale && Object.keys(typo.scale).length) {
+    t += '### Type Scale\n\n';
+    t += '| Level | Size | Weight | Line Height |\n|---|---|---|---|\n';
+    Object.entries(typo.scale).forEach(([level, v]) => {
+      if (v && typeof v === 'object') {
+        t += '| **' + level + '** | `' + (v.size || '-') + '` | ' + (v.weight || '-') + ' | ' + (v.line_height || '-') + ' |\n';
+      }
+    });
+    t += '\n';
+  }
+  if (typo.style_notes) t += '**Typographic Character**: ' + typo.style_notes + '\n\n';
+
+  t += '## Radius & Shapes\n\n';
+  t += '| Level | Value |\n|---|---|\n';
+  t += '| Small | `' + (radius.small || '4px') + '` |\n';
+  t += '| Medium | `' + (radius.medium || '8px') + '` |\n';
+  t += '| Large | `' + (radius.large || '16px') + '` |\n';
+  t += '| Pill | `' + (radius.pill || '9999px') + '` |\n';
+  if (radius.philosophy) t += '\n**Philosophy**: ' + radius.philosophy + '\n';
+  t += '\n';
+
+  t += '## Shadows & Effects\n\n';
+  t += '**Shadow Style**: ' + (shadows.style || 'none') + '\n\n';
+  if (shadows.levels) {
+    t += '| Level | Value |\n|---|---|\n';
+    t += '| Low | `' + (shadows.levels.low || 'none') + '` |\n';
+    t += '| Medium | `' + (shadows.levels.medium || 'none') + '` |\n';
+    t += '| High | `' + (shadows.levels.high || 'none') + '` |\n\n';
+  }
+  if (shadows.depth_cues) t += '**Depth Cues**: ' + shadows.depth_cues + '\n\n';
+
+  t += '## Borders\n\n';
+  t += '- **Usage**: ' + (borders.usage || 'none') + '\n';
+  t += '- **Style**: ' + (borders.style || 'none') + '\n';
+  t += '- **Dividers**: ' + (borders.divider_style || 'Whitespace only') + '\n\n';
+
+  t += '## Motion\n\n';
+  t += '- **Easing**: `' + (motion.easing || 'ease') + '`\n';
+  if (motion.duration_scale) {
+    t += '- **Micro**: `' + (motion.duration_scale.micro || '100ms') + '`\n';
+    t += '- **Normal**: `' + (motion.duration_scale.normal || '200ms') + '`\n';
+    t += '- **Macro**: `' + (motion.duration_scale.macro || '500ms') + '`\n';
+  }
+  if (motion.philosophy) t += '- **Philosophy**: ' + motion.philosophy + '\n';
+  t += '\n';
+
+  // ── 3. Component Stylings ──
+  t += '---\n\n# Component Stylings\n\n';
+  const btnEN = components.buttons || {};
+  t += '## Buttons\n\n';
+  t += '- **Primary**: ' + (btnEN.primary || 'Solid background + white text') + '\n';
+  t += '- **Secondary**: ' + (btnEN.secondary || 'Muted background + dark text') + '\n';
+  t += '- **Outline**: ' + (btnEN.outline || 'Border + transparent background') + '\n\n';
+
+  const cardEN = components.cards || {};
+  t += '## Cards\n\n';
+  t += '- **Style**: ' + (cardEN.style || 'Standard') + '\n';
+  t += '- **Appearance**: ' + (cardEN.appearance || 'Rounded corners with subtle elevation') + '\n';
+  t += '- **Interaction**: ' + (cardEN.interaction || 'Hover scale') + '\n\n';
+
+  const inputEN = components.inputs || {};
+  t += '## Inputs\n\n';
+  t += '- **Normal**: ' + (inputEN.normal || 'Standard input styling') + '\n';
+  t += '- **Focus**: ' + (inputEN.focus || 'Border highlight on focus') + '\n\n';
+
+  t += '## Navigation\n\n';
+  t += (components.navigation || 'Top navigation bar') + '\n\n';
+
+  const sectionsEN = components.sections || {};
+  if (sectionsEN.divider_style || sectionsEN.background_strategy) {
+    t += '## Page Sections\n\n';
+    if (sectionsEN.divider_style) t += '- **Divider Style**: ' + sectionsEN.divider_style + '\n';
+    if (sectionsEN.background_strategy) t += '- **Background Strategy**: ' + sectionsEN.background_strategy + '\n';
+    t += '\n';
+  }
+
+  // ── 4. Composition & Layout ──
+  t += '---\n\n# Composition & Layout\n\n';
+  t += '- **Hierarchy Method**: ' + (composition.hierarchy_method || 'Scale contrast') + '\n';
+  t += '- **Balance Type**: ' + (composition.balance_type || 'Symmetric') + '\n';
+  t += '- **Flow Direction**: ' + (composition.flow_direction || 'Top-to-bottom') + '\n';
+  t += '- **Negative Space Role**: ' + (composition.negative_space_role || 'Functional spacing') + '\n\n';
+
+  // ── 5. Visual Effects ──
+  const efxOverviewEN = effects.overview || {};
+  if (efxOverviewEN.effect_intensity && efxOverviewEN.effect_intensity !== 'none') {
+    t += '---\n\n# Visual Effects\n\n';
+    t += '- **Effect Intensity**: ' + efxOverviewEN.effect_intensity + '\n';
+    t += '- **Performance Tier**: ' + (efxOverviewEN.performance_tier || 'lightweight') + '\n';
+    t += '- **Primary Technology**: ' + (efxOverviewEN.primary_technology || 'CSS only') + '\n';
+    if (effects.composite_notes) t += '\n' + effects.composite_notes + '\n';
+    t += '\n';
+  }
+
+  // ── 6. Usage Guide ──
+  if ((guide.do?.length) || (guide.dont?.length) || (guide.signature_traits?.length)) {
+    t += '---\n\n# Usage Guide\n\n';
+    if (guide.signature_traits?.length) {
+      t += '### Signature Traits\n\n';
+      guide.signature_traits.forEach(trait => { t += '- ' + trait + '\n'; });
+      t += '\n';
+    }
+    if (guide.do?.length) {
+      t += '### ✅ Do\n\n';
+      guide.do.forEach(item => { t += '- ' + item + '\n'; });
+      t += '\n';
+    }
+    if (guide.dont?.length) {
+      t += '### ❌ Don\'t\n\n';
+      guide.dont.forEach(item => { t += '- ' + item + '\n'; });
+      t += '\n';
+    }
+  }
+
+  return t;
 }
 
 // ===== Copy Buttons =====
@@ -445,9 +803,10 @@ document.getElementById('copyJsonBtn').addEventListener('click', () => {
   showToast('JSON 已复制！');
 });
 document.getElementById('copyPromptBtn').addEventListener('click', () => {
-  const text = document.getElementById('promptOutput').textContent;
-  navigator.clipboard.writeText(text);
-  showToast('Prompt 已复制！');
+  const cn = document.getElementById('promptOutputCN').textContent;
+  const en = document.getElementById('promptOutputEN').textContent;
+  navigator.clipboard.writeText(cn + '\n\n---\n\n' + en);
+  showToast('中英文 Prompt 已复制！');
 });
 document.getElementById('copyCssBtn').addEventListener('click', () => {
   const json = document.getElementById('jsonOutput').textContent;

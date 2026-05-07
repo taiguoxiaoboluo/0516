@@ -323,10 +323,33 @@ body {
   font-size: 12px;
   line-height: 1.6;
   overflow-x: auto;
-  max-height: 400px;
+  max-height: 600px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* Prompt Dual Column */
+.prompt-dual {
+  display: flex;
+  gap: 16px;
+}
+.prompt-col {
+  flex: 1;
+  min-width: 0;
+}
+.prompt-col-header {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: var(--color-muted);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+}
+.prompt-col .prompt-output {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  max-height: 700px;
 }
 
 /* ===== Toast ===== */
