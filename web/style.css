@@ -346,28 +346,83 @@ body {
 .toast.show { transform: translateX(-50%) translateY(0); }
 
 /* ===== Evidence ===== */
-.evidence-desc { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 16px; }
-.evidence-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
-.evidence-item { border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
-.evidence-img-wrap { background: var(--color-muted); max-height: 240px; overflow: hidden; }
-.evidence-img-wrap img { width: 100%; height: auto; display: block; object-fit: cover; object-position: top; }
-.evidence-info { padding: 12px; }
-.evidence-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-.evidence-description { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
-.evidence-subtitle { font-size: 15px; font-weight: 600; margin: 20px 0 10px; }
+.evidence-desc { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 20px; }
+.evidence-sections { display: flex; flex-direction: column; gap: 20px; }
 
-.effects-tags { display: flex; flex-direction: column; gap: 8px; }
-.effect-tag { display: flex; align-items: baseline; gap: 8px; padding: 8px 12px; background: var(--color-muted); border-radius: var(--radius-sm); font-size: 13px; flex-wrap: wrap; }
-.effect-type { font-weight: 600; color: var(--color-primary); white-space: nowrap; }
-.effect-value { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-secondary); word-break: break-all; }
-.effect-source { font-size: 11px; color: var(--color-text-secondary); white-space: nowrap; }
+.evidence-section {
+  display: flex;
+  gap: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-surface);
+}
 
-.color-source-list { display: flex; flex-direction: column; gap: 6px; }
-.color-source-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: var(--color-muted); border-radius: var(--radius-sm); font-size: 13px; flex-wrap: wrap; }
-.color-source-swatch { width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--color-border); flex-shrink: 0; }
-.color-source-value { font-family: var(--font-mono); font-size: 12px; min-width: 160px; }
-.color-source-tag { font-weight: 500; }
-.color-source-pos { font-size: 11px; color: var(--color-text-secondary); }
+.evidence-left {
+  flex: 0 0 38%;
+  max-width: 38%;
+  background: var(--color-muted);
+  position: relative;
+  overflow: hidden;
+}
+.evidence-section-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(99, 102, 241, 0.85);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 4px;
+  z-index: 1;
+}
+.evidence-left img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: top;
+}
+
+.evidence-right {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+.evidence-right-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+.evidence-descriptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+.evidence-line {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text);
+  padding: 6px 10px;
+  background: var(--color-muted);
+  border-radius: var(--radius-sm);
+}
+.evidence-line strong { color: var(--color-primary); font-weight: 600; }
+.evidence-line code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  word-break: break-all;
+}
 
 /* ===== Footer ===== */
 .footer {
@@ -385,4 +440,6 @@ body {
   .result-header { flex-direction: column; align-items: flex-start; }
   .result-actions { flex-wrap: wrap; }
   .color-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+  .evidence-section { flex-direction: column; }
+  .evidence-left { flex: none; max-width: 100%; max-height: 300px; }
 }
