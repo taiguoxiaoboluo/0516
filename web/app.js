@@ -11,8 +11,12 @@ document.querySelectorAll('.tab').forEach(tab => {
 // ===== URL Sniff =====
 document.getElementById('sniffBtn').addEventListener('click', async () => {
   const url = document.getElementById('urlInput').value.trim();
+  const btn = document.getElementById('sniffBtn');
   if (!url) return showToast('请输入一个 URL');
+  if (btn.disabled) return;
 
+  btn.disabled = true;
+  btn.textContent = '嗅探中…';
   showLoading(true);
   hideResult();
 
@@ -34,6 +38,8 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
     showToast('错误：' + error.message);
   } finally {
     showLoading(false);
+    btn.disabled = false;
+    btn.textContent = '开始嗅探 🐕‍🦺';
   }
 });
 
@@ -41,7 +47,11 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 
-dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('click', (e) => {
+  // 如果点击的是删除按钮，不触发文件选择
+  if (e.target.closest('#imageRemoveBtn')) return;
+  fileInput.click();
+});
 dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', (e) => {
@@ -60,19 +70,59 @@ function handleImageFile(file) {
   const imageSniffBtn = document.getElementById('imageSniffBtn');
   const reader = new FileReader();
   reader.onload = (e) => {
-    preview.innerHTML = '<img src="' + e.target.result + '" alt="预览">';
+    // 保留删除按钮，追加图片
+    const removeBtn = preview.querySelector('#imageRemoveBtn');
+    preview.innerHTML = '';
+    if (removeBtn) preview.appendChild(removeBtn);
+    else {
+      const btn = document.createElement('button');
+      btn.className = 'image-remove-btn';
+      btn.id = 'imageRemoveBtn';
+      btn.title = '移除图片';
+      btn.textContent = '✕';
+      preview.appendChild(btn);
+    }
+    const img = document.createElement('img');
+    img.src = e.target.result;
+    img.alt = '预览';
+    preview.appendChild(img);
     preview.hidden = false;
     dropZoneInner.hidden = true;
+    dropZone.classList.add('has-image');
     imageSniffBtn.hidden = false;
     showToast('图片已加载，点击「开始嗅探」进行分析');
   };
   reader.readAsDataURL(file);
 }
 
+// ===== 图片删除按钮 =====
+document.getElementById('imagePreview').addEventListener('click', (e) => {
+  if (!e.target.closest('#imageRemoveBtn')) return;
+  e.stopPropagation();
+  clearImageUpload();
+});
+
+function clearImageUpload() {
+  const preview = document.getElementById('imagePreview');
+  const dropZoneInner = document.getElementById('dropZoneInner');
+  const imageSniffBtn = document.getElementById('imageSniffBtn');
+  // 清空预览，保留删除按钮结构
+  const imgs = preview.querySelectorAll('img');
+  imgs.forEach(img => img.remove());
+  preview.hidden = true;
+  dropZoneInner.hidden = false;
+  dropZone.classList.remove('has-image');
+  imageSniffBtn.hidden = true;
+  fileInput.value = '';
+}
+
 // ===== 图片嗅探按钮 =====
 document.getElementById('imageSniffBtn').addEventListener('click', () => {
   const img = document.querySelector('#imagePreview img');
   if (!img) return showToast('请先上传一张图片');
+  const btn = document.getElementById('imageSniffBtn');
+  btn.disabled = true;
+  btn.textContent = '分析中…';
 
   showLoading(true);
   hideResult();
@@ -85,6 +135,8 @@ document.getElementById('imageSniffBtn').addEventListener('click', () => {
       showToast('分析失败：' + error.message);
     } finally {
       showLoading(false);
+      btn.disabled = false;
+      btn.textContent = '开始嗅探 🐕‍🦺';
     }
   }, 300);
 });
