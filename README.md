@@ -1,4 +1,8 @@
-# 🐕‍🦺 Style Sniffer
+<h1 align="center">🐕‍🦺 Style Sniffer</h1>
+
+<p align="center">
+  English | <a href="README.zh-CN.md">中文</a>
+</p>
 
 Extract any design's visual DNA into structured style prompts. From screenshots, images, or URLs — one command.
 
