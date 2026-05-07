@@ -56,11 +56,13 @@ fileInput.addEventListener('change', (e) => {
 
 function handleImageFile(file) {
   const preview = document.getElementById('imagePreview');
+  const dropZoneInner = document.getElementById('dropZoneInner');
   const imageSniffBtn = document.getElementById('imageSniffBtn');
   const reader = new FileReader();
   reader.onload = (e) => {
     preview.innerHTML = '<img src="' + e.target.result + '" alt="预览">';
     preview.hidden = false;
+    dropZoneInner.hidden = true;
     imageSniffBtn.hidden = false;
     showToast('图片已加载，点击「开始嗅探」进行分析');
   };

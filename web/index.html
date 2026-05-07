@@ -40,14 +40,14 @@
         <!-- Image Tab -->
         <div class="tab-content" id="tab-image">
           <div class="drop-zone" id="dropZone">
-            <div class="drop-zone-inner">
+            <div class="drop-zone-inner" id="dropZoneInner">
               <span class="drop-icon">📸</span>
               <p>拖拽截图或图片到此处</p>
               <p class="drop-hint">或点击选择文件</p>
             </div>
+            <div id="imagePreview" class="image-preview" hidden></div>
             <input type="file" id="fileInput" accept="image/*" hidden>
           </div>
-          <div id="imagePreview" class="image-preview" hidden></div>
           <button id="imageSniffBtn" class="btn-primary image-sniff-btn" hidden>开始嗅探 🐕‍🦺</button>
         </div>
 
