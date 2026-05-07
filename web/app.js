@@ -302,7 +302,7 @@ function renderTypography(profile) {
 
   const fonts = [
     { label: '标题字体', value: typo.heading_font, sample: '风格嗅探器 Style Sniffer', style: 'font-size:28px;font-weight:700;' },
-    { label: '正文字体', value: typo.body_font, sample: '从截图、图片或网页 URL 中提取视觉设计 DNA，输出结构化风格 Prompt。', style: 'font-size:16px;font-weight:400;' }
+    { label: '正文字体', value: typo.body_font, sample: '风格嗅探器 Style Sniffer', style: 'font-size:16px;font-weight:400;' }
   ];
 
   fonts.forEach(({ label, value, sample, style }) => {
