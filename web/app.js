@@ -69,8 +69,164 @@ function handleImageFile(file) {
 
 // ===== 图片嗅探按钮 =====
 document.getElementById('imageSniffBtn').addEventListener('click', () => {
-  showToast('图片风格分析功能即将上线，敬请期待！');
+  const img = document.querySelector('#imagePreview img');
+  if (!img) return showToast('请先上传一张图片');
+
+  showLoading(true);
+  hideResult();
+
+  setTimeout(() => {
+    try {
+      const profile = extractColorsFromImage(img);
+      displayResult(profile);
+    } catch (error) {
+      showToast('分析失败：' + error.message);
+    } finally {
+      showLoading(false);
+    }
+  }, 300);
 });
+
+function extractColorsFromImage(img) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const maxSize = 200;
+  const scale = Math.min(maxSize / img.naturalWidth, maxSize / img.naturalHeight, 1);
+  canvas.width = Math.floor(img.naturalWidth * scale);
+  canvas.height = Math.floor(img.naturalHeight * scale);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+
+  // 收集所有颜色并量化
+  const colorBuckets = new Map();
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = Math.round(pixels[i] / 16) * 16;
+    const g = Math.round(pixels[i + 1] / 16) * 16;
+    const b = Math.round(pixels[i + 2] / 16) * 16;
+    const alpha = pixels[i + 3];
+    if (alpha < 128) continue;
+    const key = r + ',' + g + ',' + b;
+    colorBuckets.set(key, (colorBuckets.get(key) || 0) + 1);
+  }
+
+  // 排序取 Top 颜色
+  const sorted = Array.from(colorBuckets.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 30);
+
+  // 合并相近颜色
+  const merged = [];
+  sorted.forEach(([key, count]) => {
+    const [r, g, b] = key.split(',').map(Number);
+    const tooClose = merged.some(m => {
+      const dr = Math.abs(m.r - r), dg = Math.abs(m.g - g), db = Math.abs(m.b - b);
+      if (dr + dg + db < 60) { m.count += count; return true; }
+      return false;
+    });
+    if (!tooClose) merged.push({ r, g, b, count });
+  });
+
+  merged.sort((a, b) => b.count - a.count);
+  const topColors = merged.slice(0, 10).map(c => {
+    const hex = '#' + [c.r, c.g, c.b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
+    return { hex, count: c.count };
+  });
+
+  // 推断背景色（最多像素 & 亮度偏高的）
+  const bgColor = topColors.find(c => hexBrightness(c.hex) > 180) || topColors[0];
+  const fgColor = topColors.find(c => hexBrightness(c.hex) < 80) || topColors[topColors.length - 1];
+  const midColors = topColors.filter(c => c !== bgColor && c !== fgColor);
+
+  return {
+    meta: {
+      name: '图片风格分析',
+      description: '从上传图片中提取的设计画像',
+      source_references: ['uploaded-image'],
+      created_at: new Date().toISOString()
+    },
+    design_philosophy: {
+      core_essence: '从图片像素中提取的视觉设计身份',
+      vibe: inferVibeFromColors(topColors),
+      visual_dna: [],
+      fundamental_principles: []
+    },
+    design_tokens: {
+      colors: {
+        palette_type: 'custom',
+        background: bgColor?.hex || '#ffffff',
+        foreground: fgColor?.hex || '#000000',
+        primary: { hex: midColors[0]?.hex || '#3b82f6', role: '主色（面积最大的非背景/前景色）' },
+        secondary: { hex: midColors[1]?.hex || '#10b981', role: '次色' },
+        accent: { hex: midColors[2]?.hex || '#f59e0b', role: '强调色' },
+        muted: midColors[3]?.hex || '#f3f4f6',
+        border: midColors[4]?.hex || '#e5e7eb',
+        semantic: { success: '#10b981', warning: '#f59e0b', error: '#ef4444', info: '#3b82f6' },
+        contrast_strategy: Math.abs(hexBrightness(bgColor?.hex) - hexBrightness(fgColor?.hex)) > 150 ? '高对比' : '柔和层次',
+        all_extracted: topColors
+      },
+      typography: { heading_font: '需截图分析', body_font: '需截图分析', scale: {}, style_notes: '图片提取无法识别字体，建议配合 URL 提取' },
+      spacing: { base_unit: '4px', content_density: 'comfortable', section_rhythm: '需交互分析' },
+      radius: { small: '4px', medium: '8px', large: '16px', pill: '9999px', philosophy: '需截图分析' },
+      shadows: { style: '需截图分析', levels: { low: 'none', medium: 'none', high: 'none' } },
+      borders: { usage: '需截图分析', style: '', divider_style: '' },
+      motion: { easing: 'ease', duration_scale: { micro: '100ms', normal: '200ms', macro: '500ms' }, philosophy: '需交互分析' }
+    },
+    design_style: {
+      aesthetic: { mood: inferVibeFromColors(topColors), genre: inferGenreFromColors(topColors), personality_traits: [], adjectives: [] },
+      visual_language: {
+        complexity: topColors.length > 6 ? 'rich' : topColors.length > 3 ? 'moderate' : 'minimal',
+        ornamentation: 'subtle-accents',
+        whitespace_usage: 'balanced',
+        contrast_level: Math.abs(hexBrightness(bgColor?.hex) - hexBrightness(fgColor?.hex)) > 150 ? 'high' : 'medium',
+        texture_usage: 'none',
+        focal_strategy: '需截图分析'
+      },
+      composition: { hierarchy_method: '需截图分析', balance_type: 'symmetric', flow_direction: 'top-to-bottom', negative_space_role: '需截图分析' },
+      imagery: { photo_treatment: '需截图分析', illustration_style: '需截图分析', graphic_elements: '需截图分析', pattern_usage: '需截图分析' },
+      interaction_feel: { hover_behavior: '需交互分析', transition_personality: 'smooth-glide', microinteraction_density: 'moderate' }
+    },
+    visual_effects: { overview: { effect_intensity: 'none', performance_tier: 'lightweight', primary_technology: 'CSS only' }, composite_notes: '图片提取无法检测动效' },
+    component_styles: { buttons: { primary: '需截图分析', secondary: '需截图分析', outline: '需截图分析' }, cards: { style: '需截图分析' }, inputs: { normal: '需截图分析' }, navigation: '需截图分析', sections: {} },
+    usage_guide: { do: [], dont: [], signature_traits: [] }
+  };
+}
+
+function hexBrightness(hex) {
+  if (!hex || hex.length < 7) return 128;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+function inferVibeFromColors(colors) {
+  const vibes = [];
+  const avgBrightness = colors.reduce((sum, c) => sum + hexBrightness(c.hex), 0) / colors.length;
+  if (avgBrightness > 200) vibes.push('明亮');
+  else if (avgBrightness > 140) vibes.push('柔和');
+  else if (avgBrightness > 80) vibes.push('沉稳');
+  else vibes.push('暗调');
+
+  const hasVibrant = colors.some(c => {
+    const r = parseInt(c.hex.slice(1, 3), 16), g = parseInt(c.hex.slice(3, 5), 16), b = parseInt(c.hex.slice(5, 7), 16);
+    return Math.max(r, g, b) - Math.min(r, g, b) > 100;
+  });
+  if (hasVibrant) vibes.push('鲜艳');
+  else vibes.push('低饱和');
+
+  if (colors.length <= 3) vibes.push('极简');
+  else if (colors.length >= 7) vibes.push('丰富');
+  return vibes;
+}
+
+function inferGenreFromColors(colors) {
+  const avgBrightness = colors.reduce((sum, c) => sum + hexBrightness(c.hex), 0) / colors.length;
+  if (avgBrightness < 60) return '暗色科技 / 游戏';
+  if (avgBrightness > 220) return '极简 / 留白';
+  return '现代通用';
+}
 
 // ===== JSON Generate =====
 document.getElementById('generateBtn').addEventListener('click', () => {
