@@ -139,6 +139,9 @@ function extractColorsFromImage(img) {
   const fgColor = topColors.find(c => hexBrightness(c.hex) < 80) || topColors[topColors.length - 1];
   const midColors = topColors.filter(c => c !== bgColor && c !== fgColor);
 
+  // ===== 图片分区域溯源证据 =====
+  const evidence = generateImageEvidence(img, topColors);
+
   return {
     meta: {
       name: '图片风格分析',
@@ -189,8 +192,146 @@ function extractColorsFromImage(img) {
     },
     visual_effects: { overview: { effect_intensity: 'none', performance_tier: 'lightweight', primary_technology: 'CSS only' }, composite_notes: '图片提取无法检测动效' },
     component_styles: { buttons: { primary: '需截图分析', secondary: '需截图分析', outline: '需截图分析' }, cards: { style: '需截图分析' }, inputs: { normal: '需截图分析' }, navigation: '需截图分析', sections: {} },
-    usage_guide: { do: [], dont: [], signature_traits: [] }
+    usage_guide: { do: [], dont: [], signature_traits: [] },
+    evidence
   };
+}
+
+// ===== 图片分区域溯源证据生成 =====
+function generateImageEvidence(img, topColors) {
+  const naturalW = img.naturalWidth;
+  const naturalH = img.naturalHeight;
+  // 按图片高度分区，每区约等于一屏视口（取图片宽度作为参考高度）
+  const sectionHeight = Math.max(naturalW, Math.floor(naturalH / 4));
+  const sectionCount = Math.min(Math.ceil(naturalH / sectionHeight), 6);
+  const sections = [];
+
+  for (let i = 0; i < sectionCount; i++) {
+    const startY = i * sectionHeight;
+    const clipH = Math.min(sectionHeight, naturalH - startY);
+    if (clipH <= 0) break;
+
+    // 用 Canvas 截取该区域
+    const sliceCanvas = document.createElement('canvas');
+    sliceCanvas.width = naturalW;
+    sliceCanvas.height = clipH;
+    const sliceCtx = sliceCanvas.getContext('2d');
+    sliceCtx.drawImage(img, 0, startY, naturalW, clipH, 0, 0, naturalW, clipH);
+
+    // 分析该区域的颜色分布
+    const analysisCanvas = document.createElement('canvas');
+    const analysisScale = Math.min(100 / naturalW, 100 / clipH, 1);
+    analysisCanvas.width = Math.floor(naturalW * analysisScale);
+    analysisCanvas.height = Math.floor(clipH * analysisScale);
+    const analysisCtx = analysisCanvas.getContext('2d');
+    analysisCtx.drawImage(sliceCanvas, 0, 0, analysisCanvas.width, analysisCanvas.height);
+    const regionData = analysisCtx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
+    const regionDescriptions = analyzeRegionPixels(regionData, i, sectionCount);
+
+    // 生成 base64 截图（缩小到合理尺寸以节省内存）
+    const thumbCanvas = document.createElement('canvas');
+    const thumbScale = Math.min(600 / naturalW, 1);
+    thumbCanvas.width = Math.floor(naturalW * thumbScale);
+    thumbCanvas.height = Math.floor(clipH * thumbScale);
+    const thumbCtx = thumbCanvas.getContext('2d');
+    thumbCtx.drawImage(sliceCanvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+    const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.8);
+
+    sections.push({
+      label: '区域 ' + (i + 1) + '/' + sectionCount + ' — ' + describeRegionPosition(i, sectionCount),
+      path: dataUrl,
+      descriptions: regionDescriptions
+    });
+  }
+
+  return { sections, timestamp: Date.now() };
+}
+
+function describeRegionPosition(index, total) {
+  if (total <= 1) return '完整画面';
+  if (index === 0) return '顶部区域（Header / Hero）';
+  if (index === total - 1) return '底部区域（Footer）';
+  const positionNames = ['中上部区域', '中部区域', '中下部区域', '下部区域'];
+  return positionNames[Math.min(index - 1, positionNames.length - 1)];
+}
+
+function analyzeRegionPixels(imageData, regionIndex, totalRegions) {
+  const pixels = imageData.data;
+  const totalPixels = pixels.length / 4;
+  const descriptions = [];
+
+  // 统计颜色
+  const colorBuckets = new Map();
+  let totalBrightness = 0;
+  let totalSaturation = 0;
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+    const qr = Math.round(r / 32) * 32;
+    const qg = Math.round(g / 32) * 32;
+    const qb = Math.round(b / 32) * 32;
+    const key = qr + ',' + qg + ',' + qb;
+    colorBuckets.set(key, (colorBuckets.get(key) || 0) + 1);
+
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    totalBrightness += brightness;
+
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const saturation = max === 0 ? 0 : (max - min) / max;
+    totalSaturation += saturation;
+  }
+
+  const avgBrightness = totalBrightness / totalPixels;
+  const avgSaturation = totalSaturation / totalPixels;
+
+  // 主色提取
+  const sortedColors = Array.from(colorBuckets.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const regionTopColors = sortedColors.map(([key, count]) => {
+    const [r, g, b] = key.split(',').map(Number);
+    const hex = '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
+    return { hex, percent: ((count / totalPixels) * 100).toFixed(1) };
+  });
+
+  // 亮度描述
+  const brightnessLabel = avgBrightness > 200 ? '高亮度（浅色/白色基调）' : avgBrightness > 140 ? '中等亮度' : avgBrightness > 80 ? '中低亮度' : '低亮度（深色/暗色基调）';
+  descriptions.push('**亮度**: ' + brightnessLabel + '，均值 ' + avgBrightness.toFixed(0) + '/255');
+
+  // 饱和度描述
+  const satLabel = avgSaturation > 0.5 ? '高饱和度（色彩鲜艳丰富）' : avgSaturation > 0.25 ? '中等饱和度' : avgSaturation > 0.1 ? '低饱和度（偏灰调/中性色）' : '极低饱和度（接近黑白/灰阶）';
+  descriptions.push('**饱和度**: ' + satLabel + '，均值 ' + (avgSaturation * 100).toFixed(1) + '%');
+
+  // 主色分布
+  const colorDesc = regionTopColors.slice(0, 3).map(c => '`' + c.hex + '` (' + c.percent + '%)').join('、');
+  descriptions.push('**主色分布**: ' + colorDesc);
+
+  // 颜色丰富度
+  const colorVariety = colorBuckets.size;
+  const varietyLabel = colorVariety > 50 ? '丰富（渐变/图片较多）' : colorVariety > 20 ? '中等' : '简洁（大面积纯色/单色）';
+  descriptions.push('**色彩丰富度**: ' + varietyLabel + '（' + colorVariety + ' 个色系）');
+
+  // 对比度分析
+  if (sortedColors.length >= 2) {
+    const [topKey] = sortedColors[0];
+    const [secKey] = sortedColors[sortedColors.length > 1 ? 1 : 0];
+    const [tr, tg, tb] = topKey.split(',').map(Number);
+    const [sr, sg, sb] = secKey.split(',').map(Number);
+    const topBri = (tr * 299 + tg * 587 + tb * 114) / 1000;
+    const secBri = (sr * 299 + sg * 587 + sb * 114) / 1000;
+    const contrastDiff = Math.abs(topBri - secBri);
+    const contrastLabel = contrastDiff > 150 ? '高对比（明暗分明）' : contrastDiff > 80 ? '中等对比' : '低对比（色调柔和接近）';
+    descriptions.push('**区域对比度**: ' + contrastLabel);
+  }
+
+  // 区域位置特征推断
+  if (regionIndex === 0) {
+    descriptions.push('**布局推断**: 此区域位于页面顶部，通常包含 **导航栏、Hero Banner、品牌标识** 等元素');
+  } else if (regionIndex === totalRegions - 1) {
+    descriptions.push('**布局推断**: 此区域位于页面底部，通常包含 **Footer、联系信息、版权声明** 等元素');
+  } else {
+    descriptions.push('**布局推断**: 此区域为页面主体内容区，通常包含 **核心功能展示、产品介绍、CTA 区块** 等元素');
+  }
+
+  return descriptions;
 }
 
 function hexBrightness(hex) {
