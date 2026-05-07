@@ -1,27 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Style Sniffer 🐕‍🦺 — Design Style Extractor</title>
+  <title>Style Sniffer 🐕‍🦺 · 风格嗅探器</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="header">
     <div class="header-inner">
-      <h2 class="logo">🐕‍🦺 Style Sniffer</h2>
-      <p class="tagline">Extract visual design DNA into structured style prompts</p>
+      <h2 class="logo">🐕‍🦺 Style Sniffer · 风格嗅探器</h2>
+      <p class="tagline">从截图、图片或网页 URL 中提取视觉设计 DNA，输出结构化风格 Prompt</p>
     </div>
   </header>
 
   <main class="main">
-    <!-- Input Section -->
+    <!-- 输入区 -->
     <section class="input-section">
       <div class="input-card">
-        <h3 class="section-title">Sniff a Design</h3>
+        <h3 class="section-title">嗅探设计风格</h3>
         <div class="tab-bar">
-          <button class="tab active" data-tab="url">🌐 URL</button>
-          <button class="tab" data-tab="image">🖼️ Image</button>
+          <button class="tab active" data-tab="url">🌐 网页 URL</button>
+          <button class="tab" data-tab="image">🖼️ 图片 / 截图</button>
           <button class="tab" data-tab="json">📄 JSON</button>
         </div>
 
@@ -29,11 +29,11 @@
         <div class="tab-content active" id="tab-url">
           <div class="url-input-wrap">
             <input type="text" id="urlInput" placeholder="https://example.com" class="url-input">
-            <button id="sniffBtn" class="btn-primary">Sniff 🐕‍🦺</button>
+            <button id="sniffBtn" class="btn-primary">开始嗅探 🐕‍🦺</button>
           </div>
           <div class="options-row">
-            <label class="checkbox-label"><input type="checkbox" id="optDarkMode"> Dark mode</label>
-            <label class="checkbox-label"><input type="checkbox" id="optMobile"> Mobile viewport</label>
+            <label class="checkbox-label"><input type="checkbox" id="optDarkMode"> 暗色模式</label>
+            <label class="checkbox-label"><input type="checkbox" id="optMobile"> 移动端视口</label>
           </div>
         </div>
 
@@ -42,73 +42,74 @@
           <div class="drop-zone" id="dropZone">
             <div class="drop-zone-inner">
               <span class="drop-icon">📸</span>
-              <p>Drop screenshot or image here</p>
-              <p class="drop-hint">or click to browse</p>
+              <p>拖拽截图或图片到此处</p>
+              <p class="drop-hint">或点击选择文件</p>
             </div>
             <input type="file" id="fileInput" accept="image/*" hidden>
           </div>
           <div id="imagePreview" class="image-preview" hidden></div>
+          <button id="imageSniffBtn" class="btn-primary image-sniff-btn" hidden>开始嗅探 🐕‍🦺</button>
         </div>
 
         <!-- JSON Tab -->
         <div class="tab-content" id="tab-json">
-          <textarea id="jsonInput" class="json-textarea" placeholder="Paste a Style Sniffer JSON profile here..."></textarea>
-          <button id="generateBtn" class="btn-primary">Generate Prompt</button>
+          <textarea id="jsonInput" class="json-textarea" placeholder="粘贴 Style Sniffer JSON 画像到此处..."></textarea>
+          <button id="generateBtn" class="btn-primary">生成 Prompt</button>
         </div>
       </div>
     </section>
 
-    <!-- Loading -->
+    <!-- 加载中 -->
     <div id="loading" class="loading" hidden>
       <div class="spinner"></div>
-      <p class="loading-text">Sniffing design tokens...</p>
+      <p class="loading-text">正在嗅探设计 Token...</p>
     </div>
 
-    <!-- Result Section -->
+    <!-- 结果区 -->
     <section id="resultSection" class="result-section" hidden>
       <div class="result-header">
-        <h3 class="section-title" id="resultTitle">Extraction Result</h3>
+        <h3 class="section-title" id="resultTitle">提取结果</h3>
         <div class="result-actions">
-          <button class="btn-secondary" id="copyJsonBtn">📋 Copy JSON</button>
-          <button class="btn-secondary" id="copyPromptBtn">📝 Copy Prompt</button>
-          <button class="btn-secondary" id="copyCssBtn">🎨 Copy CSS</button>
+          <button class="btn-secondary" id="copyJsonBtn">📋 复制 JSON</button>
+          <button class="btn-secondary" id="copyPromptBtn">📝 复制 Prompt</button>
+          <button class="btn-secondary" id="copyCssBtn">🎨 复制 CSS</button>
         </div>
       </div>
 
-      <!-- Color Palette -->
+      <!-- 色彩 -->
       <div class="result-card" id="colorCard">
-        <h4 class="card-title">🎨 Colors</h4>
+        <h4 class="card-title">🎨 色彩</h4>
         <div class="color-grid" id="colorGrid"></div>
       </div>
 
-      <!-- Typography -->
+      <!-- 字体 -->
       <div class="result-card" id="typoCard">
-        <h4 class="card-title">🔤 Typography</h4>
+        <h4 class="card-title">🔤 字体排版</h4>
         <div id="typoContent"></div>
       </div>
 
-      <!-- Style Profile -->
+      <!-- 风格画像 -->
       <div class="result-card" id="styleCard">
-        <h4 class="card-title">✨ Style Profile</h4>
+        <h4 class="card-title">✨ 风格画像</h4>
         <div id="styleContent"></div>
       </div>
 
-      <!-- Raw JSON -->
+      <!-- 原始 JSON -->
       <div class="result-card">
-        <h4 class="card-title">📄 Raw JSON</h4>
+        <h4 class="card-title">📄 原始 JSON</h4>
         <pre class="json-output" id="jsonOutput"></pre>
       </div>
 
-      <!-- Generated Prompt -->
+      <!-- 生成的 Prompt -->
       <div class="result-card">
-        <h4 class="card-title">📝 Generated Prompt</h4>
+        <h4 class="card-title">📝 生成的 Prompt</h4>
         <pre class="prompt-output" id="promptOutput"></pre>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Style Sniffer 🐕‍🦺 · Extract. Structure. Generate.</p>
+    <p>Style Sniffer 🐕‍🦺 · 提取 · 结构化 · 生成</p>
   </footer>
 
   <div id="toast" class="toast" hidden></div>

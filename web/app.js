@@ -11,7 +11,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 // ===== URL Sniff =====
 document.getElementById('sniffBtn').addEventListener('click', async () => {
   const url = document.getElementById('urlInput').value.trim();
-  if (!url) return showToast('Please enter a URL');
+  if (!url) return showToast('请输入一个 URL');
 
   showLoading(true);
   hideResult();
@@ -27,11 +27,11 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
       })
     });
 
-    if (!response.ok) throw new Error('Extraction failed');
+    if (!response.ok) throw new Error('提取失败');
     const result = await response.json();
     displayResult(result);
   } catch (error) {
-    showToast('Error: ' + error.message);
+    showToast('错误：' + error.message);
   } finally {
     showLoading(false);
   }
@@ -56,25 +56,32 @@ fileInput.addEventListener('change', (e) => {
 
 function handleImageFile(file) {
   const preview = document.getElementById('imagePreview');
+  const imageSniffBtn = document.getElementById('imageSniffBtn');
   const reader = new FileReader();
   reader.onload = (e) => {
-    preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
+    preview.innerHTML = '<img src="' + e.target.result + '" alt="预览">';
     preview.hidden = false;
-    showToast('Image loaded. AI vision analysis coming in Phase 2!');
+    imageSniffBtn.hidden = false;
+    showToast('图片已加载，点击「开始嗅探」进行分析');
   };
   reader.readAsDataURL(file);
 }
 
+// ===== 图片嗅探按钮 =====
+document.getElementById('imageSniffBtn').addEventListener('click', () => {
+  showToast('图片风格分析功能即将上线，敬请期待！');
+});
+
 // ===== JSON Generate =====
 document.getElementById('generateBtn').addEventListener('click', () => {
   const jsonText = document.getElementById('jsonInput').value.trim();
-  if (!jsonText) return showToast('Please paste a JSON profile');
+  if (!jsonText) return showToast('请粘贴一个 JSON 画像');
 
   try {
     const profile = JSON.parse(jsonText);
     displayResult(profile);
   } catch (error) {
-    showToast('Invalid JSON: ' + error.message);
+    showToast('JSON 格式错误：' + error.message);
   }
 });
 
@@ -82,7 +89,7 @@ document.getElementById('generateBtn').addEventListener('click', () => {
 function displayResult(profile) {
   document.getElementById('resultSection').hidden = false;
   document.getElementById('resultTitle').textContent =
-    (profile.meta?.name || 'Unknown') + ' — Design Profile';
+    (profile.meta?.name || '未知') + ' — 设计画像';
 
   renderColors(profile);
   renderTypography(profile);
@@ -100,18 +107,18 @@ function renderColors(profile) {
   const colors = profile.design_tokens?.colors || {};
 
   const colorList = [
-    { label: 'Background', hex: colors.background },
-    { label: 'Foreground', hex: colors.foreground },
-    { label: 'Primary', hex: colors.primary?.hex },
-    { label: 'Secondary', hex: colors.secondary?.hex },
-    { label: 'Accent', hex: colors.accent?.hex },
-    { label: 'Muted', hex: colors.muted },
-    { label: 'Border', hex: colors.border }
+    { label: '背景色', hex: colors.background },
+    { label: '前景色', hex: colors.foreground },
+    { label: '主色', hex: colors.primary?.hex },
+    { label: '次色', hex: colors.secondary?.hex },
+    { label: '强调色', hex: colors.accent?.hex },
+    { label: '柔和色', hex: colors.muted },
+    { label: '边框色', hex: colors.border }
   ];
 
   const extracted = colors.all_extracted || [];
   extracted.forEach((c, i) => {
-    if (i < 6) colorList.push({ label: 'Palette ' + (i + 1), hex: c.hex });
+    if (i < 6) colorList.push({ label: '色板 ' + (i + 1), hex: c.hex });
   });
 
   colorList.forEach(({ label, hex }) => {
@@ -125,7 +132,7 @@ function renderColors(profile) {
       '<div class="color-swatch-label">' + label + '</div>';
     swatch.addEventListener('click', () => {
       navigator.clipboard.writeText(hex);
-      showToast('Copied: ' + hex);
+      showToast('已复制：' + hex);
     });
     grid.appendChild(swatch);
   });
@@ -137,8 +144,8 @@ function renderTypography(profile) {
   const typo = profile.design_tokens?.typography || {};
 
   const fonts = [
-    { label: 'Heading Font', value: typo.heading_font, sample: 'The quick brown fox', style: 'font-size:28px;font-weight:700;' },
-    { label: 'Body Font', value: typo.body_font, sample: 'The quick brown fox jumps over the lazy dog.', style: 'font-size:16px;font-weight:400;' }
+    { label: '标题字体', value: typo.heading_font, sample: '风格嗅探器 Style Sniffer', style: 'font-size:28px;font-weight:700;' },
+    { label: '正文字体', value: typo.body_font, sample: '从截图、图片或网页 URL 中提取视觉设计 DNA，输出结构化风格 Prompt。', style: 'font-size:16px;font-weight:400;' }
   ];
 
   fonts.forEach(({ label, value, sample, style }) => {
@@ -158,7 +165,7 @@ function renderTypography(profile) {
       div.className = 'typo-preview';
       div.innerHTML =
         '<div class="typo-label">' + level + ' — ' + (values.size || '') + ' / ' + (values.weight || '') + '</div>' +
-        '<div class="typo-sample" style="font-size:' + (values.size || '16px') + ';font-weight:' + (values.weight || '400') + ';">Sample Text</div>';
+        '<div class="typo-sample" style="font-size:' + (values.size || '16px') + ';font-weight:' + (values.weight || '400') + ';">示例文本</div>';
       container.appendChild(div);
     });
   }
@@ -184,12 +191,12 @@ function renderStyle(profile) {
   }
 
   const rows = [
-    ['Genre', aesthetic.genre],
-    ['Complexity', visual.complexity],
-    ['Whitespace', visual.whitespace_usage],
-    ['Contrast', visual.contrast_level],
-    ['Ornamentation', visual.ornamentation],
-    ['Texture', visual.texture_usage]
+    ['风格类型', aesthetic.genre],
+    ['复杂度', visual.complexity],
+    ['留白', visual.whitespace_usage],
+    ['对比度', visual.contrast_level],
+    ['装饰程度', visual.ornamentation],
+    ['纹理', visual.texture_usage]
   ];
 
   rows.forEach(([label, value]) => {
@@ -208,24 +215,24 @@ function generatePromptText(profile) {
   const colors = tokens.colors || {};
   const typo = tokens.typography || {};
 
-  text += '# Design Philosophy\n\n';
-  text += (profile.design_philosophy?.core_essence || 'Extracted design profile') + '\n\n';
+  text += '# 设计哲学\n\n';
+  text += (profile.design_philosophy?.core_essence || '提取的设计画像') + '\n\n';
 
   if (profile.design_philosophy?.vibe?.length) {
-    text += 'Vibe: ' + profile.design_philosophy.vibe.join(', ') + '\n\n';
+    text += '调性：' + profile.design_philosophy.vibe.join('、') + '\n\n';
   }
 
-  text += '## Colors\n\n';
-  text += '| Token | Value |\n|---|---|\n';
-  text += '| Background | `' + (colors.background || '-') + '` |\n';
-  text += '| Foreground | `' + (colors.foreground || '-') + '` |\n';
-  if (colors.primary?.hex) text += '| Primary | `' + colors.primary.hex + '` |\n';
-  if (colors.secondary?.hex) text += '| Secondary | `' + colors.secondary.hex + '` |\n';
-  if (colors.accent?.hex) text += '| Accent | `' + colors.accent.hex + '` |\n';
+  text += '## 色彩\n\n';
+  text += '| 角色 | 色值 |\n|---|---|\n';
+  text += '| 背景色 | `' + (colors.background || '-') + '` |\n';
+  text += '| 前景色 | `' + (colors.foreground || '-') + '` |\n';
+  if (colors.primary?.hex) text += '| 主色 | `' + colors.primary.hex + '` |\n';
+  if (colors.secondary?.hex) text += '| 次色 | `' + colors.secondary.hex + '` |\n';
+  if (colors.accent?.hex) text += '| 强调色 | `' + colors.accent.hex + '` |\n';
 
-  text += '\n## Typography\n\n';
-  text += '- Heading: ' + (typo.heading_font || '-') + '\n';
-  text += '- Body: ' + (typo.body_font || '-') + '\n';
+  text += '\n## 字体排版\n\n';
+  text += '- 标题字体：' + (typo.heading_font || '-') + '\n';
+  text += '- 正文字体：' + (typo.body_font || '-') + '\n';
 
   return text;
 }
@@ -234,12 +241,12 @@ function generatePromptText(profile) {
 document.getElementById('copyJsonBtn').addEventListener('click', () => {
   const text = document.getElementById('jsonOutput').textContent;
   navigator.clipboard.writeText(text);
-  showToast('JSON copied!');
+  showToast('JSON 已复制！');
 });
 document.getElementById('copyPromptBtn').addEventListener('click', () => {
   const text = document.getElementById('promptOutput').textContent;
   navigator.clipboard.writeText(text);
-  showToast('Prompt copied!');
+  showToast('Prompt 已复制！');
 });
 document.getElementById('copyCssBtn').addEventListener('click', () => {
   const json = document.getElementById('jsonOutput').textContent;
@@ -247,9 +254,9 @@ document.getElementById('copyCssBtn').addEventListener('click', () => {
     const profile = JSON.parse(json);
     const css = generateCssVars(profile);
     navigator.clipboard.writeText(css);
-    showToast('CSS variables copied!');
+    showToast('CSS 变量已复制！');
   } catch (error) {
-    showToast('Error generating CSS');
+    showToast('CSS 生成失败');
   }
 });
 
