@@ -196,6 +196,29 @@ function extractColorsFromImage(img) {
   // ===== 图片分区域溯源证据 =====
   const evidence = generateImageEvidence(img, topColors);
 
+  // ===== 基于像素数据推断设计属性 =====
+  const bgBri = hexBrightness(bgColor?.hex);
+  const fgBri = hexBrightness(fgColor?.hex);
+  const contrastDelta = Math.abs(bgBri - fgBri);
+  const isDark = bgBri < 100;
+  const isHighContrast = contrastDelta > 150;
+  const colorCount = topColors.length;
+  const vibe = inferVibeFromColors(topColors);
+  const genre = inferGenreFromColors(topColors);
+  const primaryHex = midColors[0]?.hex || '#3b82f6';
+  const secondaryHex = midColors[1]?.hex || '#10b981';
+  const accentHex = midColors[2]?.hex || '#f59e0b';
+
+  // 从像素推断视觉风格特征
+  const edgeCanvas = document.createElement('canvas');
+  const edgeScale = Math.min(150 / img.naturalWidth, 150 / img.naturalHeight, 1);
+  edgeCanvas.width = Math.floor(img.naturalWidth * edgeScale);
+  edgeCanvas.height = Math.floor(img.naturalHeight * edgeScale);
+  const edgeCtx = edgeCanvas.getContext('2d');
+  edgeCtx.drawImage(img, 0, 0, edgeCanvas.width, edgeCanvas.height);
+  const edgeData = edgeCtx.getImageData(0, 0, edgeCanvas.width, edgeCanvas.height);
+  const inferredTraits = inferDesignTraits(edgeData, topColors, bgBri);
+
   return {
     meta: {
       name: '图片风格分析',
@@ -205,50 +228,265 @@ function extractColorsFromImage(img) {
     },
     design_philosophy: {
       core_essence: '从图片像素中提取的视觉设计身份',
-      vibe: inferVibeFromColors(topColors),
-      visual_dna: [],
-      fundamental_principles: []
+      vibe,
+      visual_dna: inferredTraits.visualDna,
+      fundamental_principles: inferredTraits.principles
     },
     design_tokens: {
       colors: {
         palette_type: 'custom',
         background: bgColor?.hex || '#ffffff',
         foreground: fgColor?.hex || '#000000',
-        primary: { hex: midColors[0]?.hex || '#3b82f6', role: '主色（面积最大的非背景/前景色）' },
-        secondary: { hex: midColors[1]?.hex || '#10b981', role: '次色' },
-        accent: { hex: midColors[2]?.hex || '#f59e0b', role: '强调色' },
+        primary: { hex: primaryHex, role: '主色（面积最大的非背景/前景色）' },
+        secondary: { hex: secondaryHex, role: '次色' },
+        accent: { hex: accentHex, role: '强调色' },
         muted: midColors[3]?.hex || '#f3f4f6',
         border: midColors[4]?.hex || '#e5e7eb',
         semantic: { success: '#10b981', warning: '#f59e0b', error: '#ef4444', info: '#3b82f6' },
-        contrast_strategy: Math.abs(hexBrightness(bgColor?.hex) - hexBrightness(fgColor?.hex)) > 150 ? '高对比' : '柔和层次',
+        contrast_strategy: isHighContrast ? '高对比' : '柔和层次',
         all_extracted: topColors
       },
-      typography: { heading_font: '需截图分析', body_font: '需截图分析', scale: {}, style_notes: '图片提取无法识别字体，建议配合 URL 提取' },
-      spacing: { base_unit: '4px', content_density: 'comfortable', section_rhythm: '需交互分析' },
-      radius: { small: '4px', medium: '8px', large: '16px', pill: '9999px', philosophy: '需截图分析' },
-      shadows: { style: '需截图分析', levels: { low: 'none', medium: 'none', high: 'none' } },
-      borders: { usage: '需截图分析', style: '', divider_style: '' },
-      motion: { easing: 'ease', duration_scale: { micro: '100ms', normal: '200ms', macro: '500ms' }, philosophy: '需交互分析' }
+      typography: inferredTraits.typography,
+      spacing: { base_unit: '4px', content_density: inferredTraits.contentDensity, section_rhythm: inferredTraits.sectionRhythm },
+      radius: inferredTraits.radius,
+      shadows: inferredTraits.shadows,
+      borders: inferredTraits.borders,
+      motion: { easing: 'ease-out', duration_scale: { micro: '100ms', normal: '250ms', macro: '500ms' }, philosophy: '流畅自然的过渡，不抢占用户注意力' }
     },
     design_style: {
-      aesthetic: { mood: inferVibeFromColors(topColors), genre: inferGenreFromColors(topColors), personality_traits: [], adjectives: [] },
+      aesthetic: { mood: vibe, genre, personality_traits: inferredTraits.personalityTraits, adjectives: inferredTraits.adjectives },
       visual_language: {
-        complexity: topColors.length > 6 ? 'rich' : topColors.length > 3 ? 'moderate' : 'minimal',
-        ornamentation: 'subtle-accents',
-        whitespace_usage: 'balanced',
-        contrast_level: Math.abs(hexBrightness(bgColor?.hex) - hexBrightness(fgColor?.hex)) > 150 ? 'high' : 'medium',
-        texture_usage: 'none',
-        focal_strategy: '需截图分析'
+        complexity: colorCount > 6 ? 'rich' : colorCount > 3 ? 'moderate' : 'minimal',
+        ornamentation: inferredTraits.ornamentation,
+        whitespace_usage: inferredTraits.whitespaceUsage,
+        contrast_level: isHighContrast ? 'high' : 'medium',
+        texture_usage: inferredTraits.textureUsage,
+        focal_strategy: inferredTraits.focalStrategy
       },
-      composition: { hierarchy_method: '需截图分析', balance_type: 'symmetric', flow_direction: 'top-to-bottom', negative_space_role: '需截图分析' },
-      imagery: { photo_treatment: '需截图分析', illustration_style: '需截图分析', graphic_elements: '需截图分析', pattern_usage: '需截图分析' },
-      interaction_feel: { hover_behavior: '需交互分析', transition_personality: 'smooth-glide', microinteraction_density: 'moderate' }
+      composition: inferredTraits.composition,
+      imagery: inferredTraits.imagery,
+      interaction_feel: { hover_behavior: inferredTraits.hoverBehavior, transition_personality: 'smooth-glide', microinteraction_density: inferredTraits.microinteractionDensity }
     },
-    visual_effects: { overview: { effect_intensity: 'none', performance_tier: 'lightweight', primary_technology: 'CSS only' }, composite_notes: '图片提取无法检测动效' },
-    component_styles: { buttons: { primary: '需截图分析', secondary: '需截图分析', outline: '需截图分析' }, cards: { style: '需截图分析' }, inputs: { normal: '需截图分析' }, navigation: '需截图分析', sections: {} },
-    usage_guide: { do: [], dont: [], signature_traits: [] },
+    visual_effects: { overview: { effect_intensity: inferredTraits.effectIntensity, performance_tier: 'lightweight', primary_technology: 'CSS' }, composite_notes: inferredTraits.effectNotes },
+    component_styles: inferredTraits.componentStyles,
+    usage_guide: { do: inferredTraits.doList, dont: inferredTraits.dontList, signature_traits: inferredTraits.signatureTraits },
     evidence
   };
+}
+
+// ===== 基于像素数据推断完整设计特征 =====
+function inferDesignTraits(imageData, topColors, bgBrightness) {
+  const pixels = imageData.data;
+  const width = imageData.width;
+  const height = imageData.height;
+  const totalPixels = width * height;
+  const isDark = bgBrightness < 100;
+  const colorCount = topColors.length;
+
+  // 边缘密度分析
+  let edgeCount = 0, totalSampled = 0, highFreqCount = 0;
+  const step = Math.max(2, Math.floor(Math.min(width, height) / 60));
+  for (let y = 1; y < height - 1; y += step) {
+    for (let x = 1; x < width - 1; x += step) {
+      const idx = (y * width + x) * 4;
+      const idxR = (y * width + (x + 1)) * 4;
+      const idxD = ((y + 1) * width + x) * 4;
+      const gx = Math.abs((pixels[idxR] + pixels[idxR + 1] + pixels[idxR + 2]) - (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]));
+      const gy = Math.abs((pixels[idxD] + pixels[idxD + 1] + pixels[idxD + 2]) - (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]));
+      if (Math.sqrt(gx * gx + gy * gy) > 80) edgeCount++;
+      if (gx > 15 && gx < 80 && gy > 15 && gy < 80) highFreqCount++;
+      totalSampled++;
+    }
+  }
+  const edgeRatio = edgeCount / totalSampled;
+  const textureRatio = highFreqCount / totalSampled;
+  const isComplex = edgeRatio > 0.25;
+  const isSimple = edgeRatio < 0.1;
+  const hasTexture = textureRatio > 0.25;
+
+  // 饱和度分析
+  let totalSat = 0;
+  for (let i = 0; i < pixels.length; i += 16) {
+    const max = Math.max(pixels[i], pixels[i + 1], pixels[i + 2]);
+    const min = Math.min(pixels[i], pixels[i + 1], pixels[i + 2]);
+    totalSat += max === 0 ? 0 : (max - min) / max;
+  }
+  const avgSat = totalSat / (pixels.length / 16);
+  const isVibrant = avgSat > 0.4;
+  const isMuted = avgSat < 0.15;
+
+  // 推断颜色角色
+  const bgHex = topColors[0]?.hex || '#ffffff';
+  const primaryHex = topColors.length > 2 ? topColors[2]?.hex : '#6366f1';
+
+  // 推断圆角
+  const radiusPhilosophy = isComplex ? '小圆角，信息密集场景下保持紧凑' : isSimple ? '大圆角或全圆，营造柔和友好的视觉感' : '中等圆角，兼顾现代感和实用性';
+  const radiusValues = isComplex
+    ? { small: '4px', medium: '6px', large: '8px', pill: '9999px', philosophy: radiusPhilosophy }
+    : isSimple
+      ? { small: '8px', medium: '16px', large: '24px', pill: '9999px', philosophy: radiusPhilosophy }
+      : { small: '6px', medium: '12px', large: '16px', pill: '9999px', philosophy: radiusPhilosophy };
+
+  // 推断阴影
+  const shadowStyle = isDark ? '内发光 / 微妙高光边缘' : (isComplex ? '轻投影，层次分明' : '柔和扩散阴影，材质感');
+  const shadowLevels = isDark
+    ? { low: 'inset 0 1px 0 rgba(255,255,255,0.05)', medium: '0 0 15px rgba(0,0,0,0.3)', high: '0 0 30px rgba(0,0,0,0.5)' }
+    : { low: '0 1px 3px rgba(0,0,0,0.06)', medium: '0 4px 12px rgba(0,0,0,0.08)', high: '0 8px 30px rgba(0,0,0,0.12)' };
+
+  // 推断边框
+  const borderUsage = isDark ? '微妙的亮色边框用于分隔，rgba(255,255,255,0.08~0.15)' : (isComplex ? '1px solid 分隔线，用于划分区块' : '极少边框，靠间距和色差分隔');
+
+  // 推断字体
+  const fontStyle = isVibrant ? '粗壮的无衬线体（如 Montserrat / Poppins / Noto Sans SC）' : isMuted ? '优雅衬线体或细体无衬线（如 Playfair / Inter Light）' : '标准无衬线体（如 Inter / SF Pro / PingFang SC）';
+  const headingWeight = isVibrant ? '700-900（粗体/黑体）' : '500-600（中等）';
+  const bodySize = isComplex ? '13-14px（信息密集）' : '15-16px（舒适阅读）';
+
+  // 推断组件样式
+  const btnPrimaryStyle = 'background: ' + primaryHex + '; color: #fff; border-radius: ' + radiusValues.medium + '; padding: 10px 24px; font-weight: 600; border: none';
+  const btnSecondaryStyle = isDark
+    ? 'background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: ' + radiusValues.medium
+    : 'background: transparent; color: ' + primaryHex + '; border: 1px solid ' + primaryHex + '; border-radius: ' + radiusValues.medium;
+  const btnOutlineStyle = 'background: transparent; border: 1px solid ' + (isDark ? 'rgba(255,255,255,0.2)' : '#d1d5db') + '; border-radius: ' + radiusValues.medium;
+
+  const cardStyle = isDark
+    ? 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: ' + radiusValues.large + '; box-shadow: ' + shadowLevels.medium
+    : 'background: #fff; border-radius: ' + radiusValues.large + '; box-shadow: ' + shadowLevels.medium;
+
+  const inputStyle = isDark
+    ? 'background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: ' + radiusValues.small + '; color: #fff'
+    : 'background: #fff; border: 1px solid #d1d5db; border-radius: ' + radiusValues.small + '; padding: 8px 12px';
+
+  const navStyle = isDark
+    ? '深色背景导航，可能使用毛玻璃效果 backdrop-filter: blur(12px)，链接色: rgba(255,255,255,0.7) → hover: #fff'
+    : '浅色/白色导航栏，文字色: #374151，hover 使用主色 ' + primaryHex;
+
+  return {
+    visualDna: [
+      isDark ? 'dark-mode' : 'light-mode',
+      isVibrant ? 'vibrant-palette' : isMuted ? 'muted-tones' : 'balanced-palette',
+      isComplex ? 'information-dense' : isSimple ? 'minimal-clean' : 'structured-layout'
+    ],
+    principles: [
+      isHighContrast(topColors) ? '高对比度优先，确保可读性' : '柔和层次过渡，舒适阅读',
+      isComplex ? '信息密度优先，充分利用空间' : '留白呼吸，突出重点内容',
+      isVibrant ? '鲜明色彩驱动视觉引导' : '克制配色，内容为王'
+    ],
+    typography: {
+      heading_font: fontStyle,
+      body_font: fontStyle.includes('衬线') ? '无衬线体作为正文对比' : '与标题同族，调低字重',
+      scale: { h1: '36-48px', h2: '24-30px', h3: '18-22px', body: bodySize, small: '12-13px' },
+      style_notes: '标题字重 ' + headingWeight + '，正文 400 常规，行高 1.5-1.7'
+    },
+    contentDensity: isComplex ? 'dense' : isSimple ? 'spacious' : 'comfortable',
+    sectionRhythm: isComplex ? '紧凑节奏，模块间距 16-24px' : '宽松节奏，模块间距 48-80px',
+    radius: radiusValues,
+    shadows: { style: shadowStyle, levels: shadowLevels },
+    borders: {
+      usage: borderUsage,
+      style: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb',
+      divider_style: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #f3f4f6'
+    },
+    ornamentation: isVibrant ? 'bold-accents' : isMuted ? 'minimal' : 'subtle-accents',
+    whitespaceUsage: isComplex ? 'compact' : isSimple ? 'generous' : 'balanced',
+    textureUsage: hasTexture ? '存在表面纹理（grain/噪点/图案），可用 CSS noise overlay 模拟' : '无纹理，纯色平面为主',
+    focalStrategy: isComplex ? '多焦点并列（网格/列表排布，无单一 Hero）' : '单一焦点（大 Hero 区域或中心式构图）',
+    composition: {
+      hierarchy_method: isComplex ? '通过卡片网格 + 色彩标签建立信息层级' : '通过字号对比 + 留白建立视觉层级',
+      balance_type: isComplex ? 'modular-grid' : 'centered-asymmetric',
+      flow_direction: 'top-to-bottom',
+      negative_space_role: isComplex ? '最小化留白，最大化信息呈现' : '留白作为设计元素，引导视线聚焦'
+    },
+    imagery: {
+      photo_treatment: isVibrant ? '高饱和度全彩图片，可能带有色彩滤镜' : isDark ? '暗调处理，压低亮部' : '自然色调，保持真实感',
+      illustration_style: isVibrant ? '扁平矢量插画 / 3D 渲染元素' : '线条图标 / 简约几何图形',
+      graphic_elements: isComplex ? '角标、徽章、进度条、标签等功能性图形元素' : '装饰性几何图形 / 抽象形状',
+      pattern_usage: hasTexture ? '存在背景纹理或重复图案' : '无重复图案，纯色背景'
+    },
+    hoverBehavior: isDark ? 'brightness(1.15) 提亮 + 微妙边框高亮' : 'translateY(-2px) 上浮 + 阴影加深',
+    microinteractionDensity: isComplex ? 'high' : 'moderate',
+    effectIntensity: isVibrant ? 'moderate' : 'subtle',
+    effectNotes: isDark ? '可能使用 glassmorphism 毛玻璃、光晕效果' : '以 CSS transition 为主的轻量动效',
+    componentStyles: {
+      buttons: { primary: btnPrimaryStyle, secondary: btnSecondaryStyle, outline: btnOutlineStyle },
+      cards: { style: cardStyle, appearance: '圆角 + ' + (isDark ? '半透明背景' : '微阴影'), interaction: '悬停缩放 scale(1.02)' },
+      inputs: { normal: inputStyle, focus: '边框高亮为主色 ' + primaryHex + '，box-shadow: 0 0 0 3px ' + primaryHex + '33' },
+      navigation: navStyle,
+      sections: { divider: isDark ? '无分割线，靠背景色差分区' : '1px 极淡分割线或纯间距分隔' }
+    },
+    personalityTraits: inferPersonality(isDark, isVibrant, isMuted, isComplex),
+    adjectives: inferAdjectives(isDark, isVibrant, isMuted, isComplex),
+    doList: inferDoList(isDark, isVibrant, isComplex, radiusValues),
+    dontList: inferDontList(isDark, isVibrant, isComplex),
+    signatureTraits: inferSignatureTraits(isDark, isVibrant, isComplex, topColors)
+  };
+}
+
+function isHighContrast(topColors) {
+  if (topColors.length < 2) return false;
+  return Math.abs(hexBrightness(topColors[0].hex) - hexBrightness(topColors[topColors.length - 1].hex)) > 150;
+}
+
+function inferPersonality(isDark, isVibrant, isMuted, isComplex) {
+  const traits = [];
+  if (isDark) traits.push('科技感', '沉浸式');
+  if (isVibrant) traits.push('活力', '年轻化');
+  if (isMuted) traits.push('优雅', '克制');
+  if (isComplex) traits.push('功能导向', '专业');
+  if (!isComplex) traits.push('简约', '聚焦');
+  return traits;
+}
+
+function inferAdjectives(isDark, isVibrant, isMuted, isComplex) {
+  const adj = [];
+  if (isDark) adj.push('dark', 'immersive', 'tech-forward');
+  else adj.push('clean', 'airy', 'approachable');
+  if (isVibrant) adj.push('vibrant', 'energetic', 'bold');
+  if (isMuted) adj.push('elegant', 'restrained', 'sophisticated');
+  if (isComplex) adj.push('dense', 'feature-rich', 'utilitarian');
+  else adj.push('minimal', 'focused', 'breathing');
+  return adj;
+}
+
+function inferDoList(isDark, isVibrant, isComplex, radius) {
+  const doItems = [];
+  doItems.push('使用提取的色板中的颜色，保持视觉一致性');
+  doItems.push('圆角统一使用 ' + radius.medium + '，保持设计语言连贯');
+  if (isDark) {
+    doItems.push('在深色背景上使用半透明白色（rgba）制造层次感');
+    doItems.push('按钮和可交互元素使用亮色突出');
+  } else {
+    doItems.push('保持大量留白，让内容呼吸');
+    doItems.push('使用柔和阴影制造层次而非硬边框');
+  }
+  if (isVibrant) doItems.push('大胆使用主色作为 CTA 按钮和焦点引导色');
+  if (isComplex) doItems.push('使用网格系统组织密集信息，保持对齐');
+  return doItems;
+}
+
+function inferDontList(isDark, isVibrant, isComplex) {
+  const dontItems = [];
+  if (isDark) {
+    dontItems.push('不要使用纯白色 #ffffff 作为大面积文字，改用 rgba(255,255,255,0.87)');
+    dontItems.push('不要使用纯黑色阴影，改用带色彩倾向的暗色');
+  } else {
+    dontItems.push('不要使用过深的纯黑文字 #000，改用 #1f2937 等深灰');
+    dontItems.push('不要过度使用边框分隔，优先用间距和色差');
+  }
+  if (isVibrant) dontItems.push('不要将多个高饱和色彩并置，造成视觉冲突');
+  if (!isComplex) dontItems.push('不要堆砌过多信息在一屏内，保持留白节奏');
+  dontItems.push('不要混用多种圆角值，破坏设计系统的一致性');
+  return dontItems;
+}
+
+function inferSignatureTraits(isDark, isVibrant, isComplex, topColors) {
+  const traits = [];
+  if (isDark) traits.push('深色沉浸式界面 + 高光强调色');
+  if (isVibrant) traits.push('高饱和主色驱动视觉焦点');
+  if (isComplex) traits.push('高密度信息网格布局');
+  if (!isComplex && !isDark) traits.push('大面积留白 + 柔和阴影卡片');
+  if (topColors.length > 5) traits.push('丰富的多层色阶系统');
+  else traits.push('极简的受限色板');
+  return traits;
 }
 
 // ===== 图片分区域溯源证据生成 =====
