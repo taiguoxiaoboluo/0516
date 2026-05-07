@@ -1,0 +1,256 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Style Sniffer Design Profile",
+  "description": "Three-dimensional design profile: tokens, style, effects",
+  "type": "object",
+  "required": ["meta", "design_philosophy", "design_tokens", "design_style", "visual_effects", "component_styles", "usage_guide"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Design profile name" },
+        "description": { "type": "string", "description": "One-line summary of the design identity" },
+        "source_references": { "type": "array", "items": { "type": "string" }, "description": "URLs or image paths used as references" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "design_philosophy": {
+      "type": "object",
+      "description": "High-level design intent and identity",
+      "properties": {
+        "core_essence": { "type": "string", "description": "One paragraph describing the design philosophy" },
+        "vibe": { "type": "array", "items": { "type": "string" }, "description": "3-6 mood/vibe keywords, e.g. ['calm', 'artisanal', 'warm']" },
+        "visual_dna": { "type": "array", "items": { "type": "string" }, "description": "Core visual traits, e.g. ['organic softness', 'typographic elegance']" },
+        "fundamental_principles": { "type": "array", "items": { "type": "string" }, "description": "Design rules this system follows" }
+      }
+    },
+    "design_tokens": {
+      "type": "object",
+      "description": "Measurable, structural design values",
+      "properties": {
+        "colors": {
+          "type": "object",
+          "properties": {
+            "palette_type": { "type": "string", "enum": ["monochromatic", "complementary", "analogous", "triadic", "split-complementary", "custom"] },
+            "background": { "type": "string", "description": "Page background hex" },
+            "foreground": { "type": "string", "description": "Primary text hex" },
+            "primary": { "type": "object", "properties": { "hex": { "type": "string" }, "role": { "type": "string" } } },
+            "secondary": { "type": "object", "properties": { "hex": { "type": "string" }, "role": { "type": "string" } } },
+            "accent": { "type": "object", "properties": { "hex": { "type": "string" }, "role": { "type": "string" } } },
+            "muted": { "type": "string", "description": "Muted/subtle background hex" },
+            "border": { "type": "string", "description": "Default border color hex" },
+            "semantic": {
+              "type": "object",
+              "properties": {
+                "success": { "type": "string" },
+                "warning": { "type": "string" },
+                "error": { "type": "string" },
+                "info": { "type": "string" }
+              }
+            },
+            "contrast_strategy": { "type": "string" }
+          }
+        },
+        "typography": {
+          "type": "object",
+          "properties": {
+            "heading_font": { "type": "string", "description": "Font family for headings" },
+            "body_font": { "type": "string", "description": "Font family for body text" },
+            "mono_font": { "type": "string", "description": "Font family for code/mono" },
+            "scale": {
+              "type": "object",
+              "properties": {
+                "display": { "type": "object", "properties": { "size": {"type":"string"}, "weight": {"type":"string"}, "line_height": {"type":"string"}, "tracking": {"type":"string"} } },
+                "heading_1": { "type": "object", "properties": { "size": {"type":"string"}, "weight": {"type":"string"}, "line_height": {"type":"string"}, "tracking": {"type":"string"} } },
+                "heading_2": { "type": "object", "properties": { "size": {"type":"string"}, "weight": {"type":"string"}, "line_height": {"type":"string"}, "tracking": {"type":"string"} } },
+                "heading_3": { "type": "object", "properties": { "size": {"type":"string"}, "weight": {"type":"string"}, "line_height": {"type":"string"}, "tracking": {"type":"string"} } },
+                "body": { "type": "object", "properties": { "size": {"type":"string"}, "weight": {"type":"string"}, "line_height": {"type":"string"}, "tracking": {"type":"string"} } },
+                "body_small": { "type": "object", "properties": { "size": {"type":"string"}, "weight": {"type":"string"}, "line_height": {"type":"string"}, "tracking": {"type":"string"} } },
+                "caption": { "type": "object", "properties": { "size": {"type":"string"}, "weight": {"type":"string"}, "line_height": {"type":"string"}, "tracking": {"type":"string"} } }
+              }
+            },
+            "style_notes": { "type": "string", "description": "e.g. 'geometric sans with humanist touches'" }
+          }
+        },
+        "spacing": {
+          "type": "object",
+          "properties": {
+            "base_unit": { "type": "string", "description": "Base spacing unit, e.g. '4px' or '0.25rem'" },
+            "scale": { "type": "array", "items": { "type": "string" }, "description": "Spacing scale values" },
+            "content_density": { "type": "string", "enum": ["compact", "comfortable", "spacious"] },
+            "section_rhythm": { "type": "string", "description": "How vertical spacing varies between sections" }
+          }
+        },
+        "radius": {
+          "type": "object",
+          "properties": {
+            "small": { "type": "string" },
+            "medium": { "type": "string" },
+            "large": { "type": "string" },
+            "pill": { "type": "string" },
+            "philosophy": { "type": "string", "description": "e.g. 'sharp geometric' or 'soft organic'" }
+          }
+        },
+        "shadows": {
+          "type": "object",
+          "properties": {
+            "style": { "type": "string", "enum": ["none", "soft-diffused", "hard-drop", "layered", "colored"] },
+            "levels": {
+              "type": "object",
+              "properties": {
+                "low": { "type": "string" },
+                "medium": { "type": "string" },
+                "high": { "type": "string" }
+              }
+            },
+            "depth_cues": { "type": "string" }
+          }
+        },
+        "borders": {
+          "type": "object",
+          "properties": {
+            "usage": { "type": "string", "description": "e.g. 'none', 'subtle 1px', 'bold borders'" },
+            "style": { "type": "string" },
+            "divider_style": { "type": "string" }
+          }
+        },
+        "motion": {
+          "type": "object",
+          "properties": {
+            "easing": { "type": "string" },
+            "duration_scale": {
+              "type": "object",
+              "properties": {
+                "micro": { "type": "string" },
+                "normal": { "type": "string" },
+                "macro": { "type": "string" }
+              }
+            },
+            "philosophy": { "type": "string", "description": "e.g. 'minimal functional', 'playful bouncy', 'cinematic'" }
+          }
+        }
+      }
+    },
+    "design_style": {
+      "type": "object",
+      "description": "Qualitative, perceptual design qualities",
+      "properties": {
+        "aesthetic": {
+          "type": "object",
+          "properties": {
+            "mood": { "type": "array", "items": { "type": "string" }, "description": "3-5 mood words" },
+            "genre": { "type": "string", "description": "e.g. 'corporate SaaS', 'indie creative', 'luxury editorial'" },
+            "era_influence": { "type": "string" },
+            "personality_traits": { "type": "array", "items": { "type": "string" }, "description": "As if the design were a person" },
+            "adjectives": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "visual_language": {
+          "type": "object",
+          "properties": {
+            "complexity": { "type": "string", "enum": ["minimal", "moderate", "rich", "maximal"] },
+            "ornamentation": { "type": "string", "enum": ["none", "subtle-accents", "decorative", "heavily-ornamented"] },
+            "whitespace_usage": { "type": "string", "enum": ["tight", "balanced", "generous", "dramatic"] },
+            "contrast_level": { "type": "string", "enum": ["low", "medium", "high", "extreme"] },
+            "texture_usage": { "type": "string", "description": "e.g. 'paper grain overlay', 'noise texture', 'none'" },
+            "focal_strategy": { "type": "string" }
+          }
+        },
+        "composition": {
+          "type": "object",
+          "properties": {
+            "hierarchy_method": { "type": "string", "description": "e.g. 'scale contrast', 'color weight', 'typographic hierarchy'" },
+            "balance_type": { "type": "string", "enum": ["symmetric", "asymmetric", "radial", "mosaic"] },
+            "flow_direction": { "type": "string" },
+            "negative_space_role": { "type": "string" }
+          }
+        },
+        "imagery": {
+          "type": "object",
+          "properties": {
+            "photo_treatment": { "type": "string", "description": "e.g. 'desaturated', 'vibrant', 'duotone', 'grayscale'" },
+            "illustration_style": { "type": "string" },
+            "graphic_elements": { "type": "string", "description": "Decorative SVGs, gradients, patterns" },
+            "pattern_usage": { "type": "string" }
+          }
+        },
+        "interaction_feel": {
+          "type": "object",
+          "properties": {
+            "hover_behavior": { "type": "string" },
+            "transition_personality": { "type": "string", "enum": ["snappy", "smooth-glide", "bouncy-elastic", "fade-subtle"] },
+            "microinteraction_density": { "type": "string", "enum": ["none", "sparse", "moderate", "rich"] }
+          }
+        }
+      }
+    },
+    "visual_effects": {
+      "type": "object",
+      "description": "Special rendering beyond standard CSS",
+      "properties": {
+        "overview": {
+          "type": "object",
+          "properties": {
+            "effect_intensity": { "type": "string", "enum": ["none", "subtle-accent", "moderate", "heavy-immersive"] },
+            "performance_tier": { "type": "string", "enum": ["lightweight", "medium", "heavy"] },
+            "primary_technology": { "type": "string" },
+            "fallback_strategy": { "type": "string" }
+          }
+        },
+        "background_effects": { "type": "object", "properties": { "type": {"type":"string"}, "description": {"type":"string"}, "params": {"type":"object"} } },
+        "scroll_effects": { "type": "object", "properties": { "parallax": {"type":"object"}, "scroll_triggered": {"type":"object"} } },
+        "text_effects": { "type": "object", "properties": { "type": {"type":"string"}, "description": {"type":"string"}, "params": {"type":"object"} } },
+        "cursor_effects": { "type": "object", "properties": { "enabled": {"type":"boolean"}, "type": {"type":"string"}, "params": {"type":"object"} } },
+        "glassmorphism": { "type": "object", "properties": { "enabled": {"type":"boolean"}, "style": {"type":"string"}, "params": {"type":"object"} } },
+        "composite_notes": { "type": "string", "description": "Free-text notes for layered effects or ambiguity" }
+      }
+    },
+    "component_styles": {
+      "type": "object",
+      "description": "Component-level styling patterns",
+      "properties": {
+        "buttons": {
+          "type": "object",
+          "properties": {
+            "primary": { "type": "string" },
+            "secondary": { "type": "string" },
+            "outline": { "type": "string" }
+          }
+        },
+        "cards": {
+          "type": "object",
+          "properties": {
+            "style": { "type": "string" },
+            "appearance": { "type": "string" },
+            "interaction": { "type": "string" }
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "normal": { "type": "string" },
+            "focus": { "type": "string" }
+          }
+        },
+        "navigation": { "type": "string" },
+        "sections": {
+          "type": "object",
+          "properties": {
+            "divider_style": { "type": "string" },
+            "background_strategy": { "type": "string" }
+          }
+        },
+        "component_notes": { "type": "string" }
+      }
+    },
+    "usage_guide": {
+      "type": "object",
+      "description": "Practical guidance for applying this design",
+      "properties": {
+        "do": { "type": "array", "items": { "type": "string" }, "description": "Things to do" },
+        "dont": { "type": "array", "items": { "type": "string" }, "description": "Things to avoid" },
+        "signature_traits": { "type": "array", "items": { "type": "string" }, "description": "Most recognizable visual traits" }
+      }
+    }
+  }
+}
