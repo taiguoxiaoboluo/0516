@@ -1113,6 +1113,13 @@ function formatDesc(text) {
 }
 
 // ===== Generate Prompt Text (Chinese) =====
+// 值清洗：过滤掉占位符，替换为有意义的默认描述
+function cleanValue(value, fallback) {
+  if (!value || typeof value !== 'string') return fallback || '';
+  if (/需截图|需交互|需.*分析/.test(value)) return fallback || '';
+  return value;
+}
+
 function generatePromptText(profile) {
   const p = profile;
   const tokens = p.design_tokens || {};
@@ -1152,7 +1159,7 @@ function generatePromptText(profile) {
   t += '- **留白策略**：' + (visual.whitespace_usage || 'balanced') + '\n';
   t += '- **对比度**：' + (visual.contrast_level || 'high') + '\n';
   t += '- **纹理使用**：' + (visual.texture_usage || 'none') + '\n';
-  t += '- **焦点策略**：' + (visual.focal_strategy || '单一 Hero 元素') + '\n';
+  t += '- **焦点策略**：' + cleanValue(visual.focal_strategy, '单一焦点（大 Hero 区域或中心式构图）') + '\n';
   if (aesthetic.genre) t += '- **风格流派**：' + aesthetic.genre + '\n';
   if (aesthetic.era_influence) t += '- **时代影响**：' + aesthetic.era_influence + '\n';
   if (aesthetic.mood?.length) t += '- **情绪关键词**：' + aesthetic.mood.join('、') + '\n';
@@ -1182,8 +1189,8 @@ function generatePromptText(profile) {
   t += '## 字体排版\n\n';
   t += '### 字体栈\n\n';
   t += '```css\n';
-  t += '/* 标题字体 */\nfont-family: \'' + (typo.heading_font || 'system-ui') + '\', sans-serif;\n\n';
-  t += '/* 正文字体 */\nfont-family: \'' + (typo.body_font || 'system-ui') + '\', sans-serif;\n';
+  t += '/* 标题字体 */\nfont-family: \'' + cleanValue(typo.heading_font, 'system-ui, sans-serif') + '\', sans-serif;\n\n';
+  t += '/* 正文字体 */\nfont-family: \'' + cleanValue(typo.body_font, 'system-ui, sans-serif') + '\', sans-serif;\n';
   if (typo.mono_font) t += '\n/* 等宽字体 */\nfont-family: \'' + typo.mono_font + '\', monospace;\n';
   t += '```\n\n';
 
@@ -1206,25 +1213,25 @@ function generatePromptText(profile) {
   t += '| 中 | `' + (radius.medium || '8px') + '` |\n';
   t += '| 大 | `' + (radius.large || '16px') + '` |\n';
   t += '| 药丸 | `' + (radius.pill || '9999px') + '` |\n';
-  if (radius.philosophy) t += '\n**设计理念**：' + radius.philosophy + '\n';
+  if (radius.philosophy) t += '\n**设计理念**：' + cleanValue(radius.philosophy, '统一圆角体系，保持视觉一致性') + '\n';
   t += '\n';
 
   // 阴影
   t += '## 阴影与特效\n\n';
-  t += '**阴影风格**：' + (shadows.style || 'none') + '\n\n';
+  t += '**阴影风格**：' + cleanValue(shadows.style, '柔和扩散阴影，用于卡片和浮层的层次区分') + '\n\n';
   if (shadows.levels) {
     t += '| 层级 | 值 |\n|---|---|\n';
     t += '| 低 | `' + (shadows.levels.low || 'none') + '` |\n';
     t += '| 中 | `' + (shadows.levels.medium || 'none') + '` |\n';
     t += '| 高 | `' + (shadows.levels.high || 'none') + '` |\n\n';
   }
-  if (shadows.depth_cues) t += '**深度线索**：' + shadows.depth_cues + '\n\n';
+  if (shadows.depth_cues) t += '**深度线索**：' + cleanValue(shadows.depth_cues, '') + '\n\n';
 
   // 边框
   t += '## 边框\n\n';
-  t += '- **使用频率**：' + (borders.usage || '无') + '\n';
-  t += '- **边框风格**：' + (borders.style || '无') + '\n';
-  t += '- **分隔线**：' + (borders.divider_style || '留白分隔') + '\n\n';
+  t += '- **使用频率**：' + cleanValue(borders.usage, '适量使用，主要用于输入框和卡片分隔') + '\n';
+  t += '- **边框风格**：' + cleanValue(borders.style, '1px solid ' + (colors.border || '#e5e7eb')) + '\n';
+  t += '- **分隔线**：' + cleanValue(borders.divider_style || borders.divider, '间距分隔为主，辅以极淡色分割线') + '\n\n';
 
   // 动效
   t += '## 动效\n\n';
@@ -1234,45 +1241,42 @@ function generatePromptText(profile) {
     t += '- **常规过渡**：`' + (motion.duration_scale.normal || '200ms') + '`\n';
     t += '- **宏观动画**：`' + (motion.duration_scale.macro || '500ms') + '`\n';
   }
-  if (motion.philosophy) t += '- **动效理念**：' + motion.philosophy + '\n';
+  if (motion.philosophy) t += '- **动效理念**：' + cleanValue(motion.philosophy, '流畅自然的过渡，不抢占用户注意力') + '\n';
   t += '\n';
 
   // ── 3. 组件样式 ──
   t += '---\n\n# 组件样式\n\n';
   const btn = components.buttons || {};
   t += '## 按钮\n\n';
-  t += '- **主按钮**：' + (btn.primary || '实色背景 + 白色文字') + '\n';
-  t += '- **次按钮**：' + (btn.secondary || '柔和背景 + 深色文字') + '\n';
-  t += '- **轮廓按钮**：' + (btn.outline || '边框 + 透明背景') + '\n\n';
+  t += '- **主按钮**：' + cleanValue(btn.primary, '实色背景 `background: ' + (colors.primary?.hex || '#6366f1') + '`; 白色文字; `border-radius: ' + (radius.medium || '8px') + '`; `padding: 10px 24px`; `font-weight: 600`') + '\n';
+  t += '- **次按钮**：' + cleanValue(btn.secondary, '透明底 + 主色边框; `border: 1px solid ' + (colors.primary?.hex || '#6366f1') + '`; 主色文字; 同等圆角') + '\n';
+  t += '- **轮廓按钮**：' + cleanValue(btn.outline, '`background: transparent`; `border: 1px solid #d1d5db`; 灰色文字; 悬停时边框变深') + '\n\n';
 
   const card = components.cards || {};
   t += '## 卡片\n\n';
-  t += '- **风格**：' + (card.style || '标准') + '\n';
-  t += '- **外观**：' + (card.appearance || '圆角 + 微妙阴影') + '\n';
-  t += '- **交互**：' + (card.interaction || '悬停缩放') + '\n\n';
+  t += '- **风格**：' + cleanValue(card.style, '`background: #fff`; `border-radius: ' + (radius.large || '16px') + '`; `box-shadow: 0 4px 12px rgba(0,0,0,0.08)`') + '\n';
+  t += '- **外观**：' + cleanValue(card.appearance, '圆角 + 微妙阴影浮起，内边距 `padding: 20px 24px`') + '\n';
+  t += '- **交互**：' + cleanValue(card.interaction, '悬停 `transform: translateY(-2px)`; `box-shadow` 加深; `transition: all 0.2s ease`') + '\n\n';
 
   const input = components.inputs || {};
   t += '## 输入框\n\n';
-  t += '- **常态**：' + (input.normal || '标准输入样式') + '\n';
-  t += '- **聚焦**：' + (input.focus || '边框高亮') + '\n\n';
+  t += '- **常态**：' + cleanValue(input.normal, '`background: #fff`; `border: 1px solid #d1d5db`; `border-radius: ' + (radius.small || '6px') + '`; `padding: 8px 12px`; `font-size: 14px`') + '\n';
+  t += '- **聚焦**：' + cleanValue(input.focus, '边框高亮 `border-color: ' + (colors.primary?.hex || '#6366f1') + '`; `box-shadow: 0 0 0 3px ' + (colors.primary?.hex || '#6366f1') + '33`') + '\n\n';
 
   t += '## 导航\n\n';
-  t += (components.navigation || '顶部导航栏') + '\n\n';
+  t += cleanValue(components.navigation, '顶部固定导航栏; `background: ' + (colors.background || '#fff') + '`; `backdrop-filter: blur(8px)`; 链接色 `color: ' + (colors.foreground || '#374151') + '`; hover 变主色') + '\n\n';
 
   const sections = components.sections || {};
-  if (sections.divider_style || sections.background_strategy) {
-    t += '## 页面分区\n\n';
-    if (sections.divider_style) t += '- **分隔方式**：' + sections.divider_style + '\n';
-    if (sections.background_strategy) t += '- **背景策略**：' + sections.background_strategy + '\n';
-    t += '\n';
-  }
+  t += '## 页面分区\n\n';
+  t += '- **分隔方式**：' + cleanValue(sections.divider_style || sections.divider, '间距分隔为主，辅以 `1px solid ' + (colors.border || '#e5e7eb') + '` 细线') + '\n';
+  t += '- **背景策略**：' + cleanValue(sections.background_strategy, '交替使用 `' + (colors.background || '#fff') + '` 和 `' + (colors.muted || '#f9fafb') + '` 制造区块节奏') + '\n\n';
 
   // ── 4. 构图与布局 ──
   t += '---\n\n# 构图与布局\n\n';
-  t += '- **层级方法**：' + (composition.hierarchy_method || '尺寸对比') + '\n';
-  t += '- **平衡类型**：' + (composition.balance_type || '对称') + '\n';
-  t += '- **视觉流向**：' + (composition.flow_direction || '从上到下') + '\n';
-  t += '- **负空间作用**：' + (composition.negative_space_role || '功能性间距') + '\n\n';
+  t += '- **层级方法**：' + cleanValue(composition.hierarchy_method, '通过字号对比 + 色彩权重建立视觉层级') + '\n';
+  t += '- **平衡类型**：' + cleanValue(composition.balance_type, '居中对称') + '\n';
+  t += '- **视觉流向**：' + cleanValue(composition.flow_direction, '从上到下，Z 型阅读路径') + '\n';
+  t += '- **负空间作用**：' + cleanValue(composition.negative_space_role, '留白引导视线聚焦，模块间保持呼吸感') + '\n\n';
 
   // ── 5. 视觉特效 ──
   const efxOverview = effects.overview || {};
@@ -1348,7 +1352,7 @@ function generatePromptTextEN(profile) {
   t += '- **Whitespace Strategy**: ' + (visual.whitespace_usage || 'balanced') + '\n';
   t += '- **Contrast Level**: ' + (visual.contrast_level || 'high') + '\n';
   t += '- **Texture Usage**: ' + (visual.texture_usage || 'none') + '\n';
-  t += '- **Focal Strategy**: ' + (visual.focal_strategy || 'Single hero element') + '\n';
+  t += '- **Focal Strategy**: ' + cleanValue(visual.focal_strategy, 'Single focal point (large hero area or center-stage composition)') + '\n';
   if (aesthetic.genre) t += '- **Genre**: ' + aesthetic.genre + '\n';
   if (aesthetic.era_influence) t += '- **Era Influence**: ' + aesthetic.era_influence + '\n';
   if (aesthetic.mood?.length) t += '- **Mood Keywords**: ' + aesthetic.mood.join(', ') + '\n';
@@ -1376,8 +1380,8 @@ function generatePromptTextEN(profile) {
   t += '## Typography\n\n';
   t += '### Font Stack\n\n';
   t += '```css\n';
-  t += '/* Heading Font */\nfont-family: \'' + (typo.heading_font || 'system-ui') + '\', sans-serif;\n\n';
-  t += '/* Body Font */\nfont-family: \'' + (typo.body_font || 'system-ui') + '\', sans-serif;\n';
+  t += '/* Heading Font */\nfont-family: \'' + cleanValue(typo.heading_font, 'system-ui, sans-serif') + '\', sans-serif;\n\n';
+  t += '/* Body Font */\nfont-family: \'' + cleanValue(typo.body_font, 'system-ui, sans-serif') + '\', sans-serif;\n';
   if (typo.mono_font) t += '\n/* Monospace Font */\nfont-family: \'' + typo.mono_font + '\', monospace;\n';
   t += '```\n\n';
 
@@ -1399,23 +1403,23 @@ function generatePromptTextEN(profile) {
   t += '| Medium | `' + (radius.medium || '8px') + '` |\n';
   t += '| Large | `' + (radius.large || '16px') + '` |\n';
   t += '| Pill | `' + (radius.pill || '9999px') + '` |\n';
-  if (radius.philosophy) t += '\n**Philosophy**: ' + radius.philosophy + '\n';
+  if (radius.philosophy) t += '\n**Philosophy**: ' + cleanValue(radius.philosophy, 'Unified radius system for visual consistency') + '\n';
   t += '\n';
 
   t += '## Shadows & Effects\n\n';
-  t += '**Shadow Style**: ' + (shadows.style || 'none') + '\n\n';
+  t += '**Shadow Style**: ' + cleanValue(shadows.style, 'Soft diffused shadows for card and overlay depth separation') + '\n\n';
   if (shadows.levels) {
     t += '| Level | Value |\n|---|---|\n';
     t += '| Low | `' + (shadows.levels.low || 'none') + '` |\n';
     t += '| Medium | `' + (shadows.levels.medium || 'none') + '` |\n';
     t += '| High | `' + (shadows.levels.high || 'none') + '` |\n\n';
   }
-  if (shadows.depth_cues) t += '**Depth Cues**: ' + shadows.depth_cues + '\n\n';
+  if (shadows.depth_cues) t += '**Depth Cues**: ' + cleanValue(shadows.depth_cues, '') + '\n\n';
 
   t += '## Borders\n\n';
-  t += '- **Usage**: ' + (borders.usage || 'none') + '\n';
-  t += '- **Style**: ' + (borders.style || 'none') + '\n';
-  t += '- **Dividers**: ' + (borders.divider_style || 'Whitespace only') + '\n\n';
+  t += '- **Usage**: ' + cleanValue(borders.usage, 'Moderate — primarily for inputs and card separation') + '\n';
+  t += '- **Style**: ' + cleanValue(borders.style, '1px solid ' + (colors.border || '#e5e7eb')) + '\n';
+  t += '- **Dividers**: ' + cleanValue(borders.divider_style || borders.divider, 'Spacing-based separation with optional subtle hairlines') + '\n\n';
 
   t += '## Motion\n\n';
   t += '- **Easing**: `' + (motion.easing || 'ease') + '`\n';
@@ -1424,45 +1428,42 @@ function generatePromptTextEN(profile) {
     t += '- **Normal**: `' + (motion.duration_scale.normal || '200ms') + '`\n';
     t += '- **Macro**: `' + (motion.duration_scale.macro || '500ms') + '`\n';
   }
-  if (motion.philosophy) t += '- **Philosophy**: ' + motion.philosophy + '\n';
+  if (motion.philosophy) t += '- **Philosophy**: ' + cleanValue(motion.philosophy, 'Smooth natural transitions that don\'t steal user attention') + '\n';
   t += '\n';
 
   // ── 3. Component Stylings ──
   t += '---\n\n# Component Stylings\n\n';
   const btnEN = components.buttons || {};
   t += '## Buttons\n\n';
-  t += '- **Primary**: ' + (btnEN.primary || 'Solid background + white text') + '\n';
-  t += '- **Secondary**: ' + (btnEN.secondary || 'Muted background + dark text') + '\n';
-  t += '- **Outline**: ' + (btnEN.outline || 'Border + transparent background') + '\n\n';
+  t += '- **Primary**: ' + cleanValue(btnEN.primary, 'Solid fill `background: ' + (colors.primary?.hex || '#6366f1') + '`; white text; `border-radius: ' + (radius.medium || '8px') + '`; `padding: 10px 24px`; `font-weight: 600`') + '\n';
+  t += '- **Secondary**: ' + cleanValue(btnEN.secondary, 'Transparent + primary border; `border: 1px solid ' + (colors.primary?.hex || '#6366f1') + '`; primary-colored text') + '\n';
+  t += '- **Outline**: ' + cleanValue(btnEN.outline, '`background: transparent`; `border: 1px solid #d1d5db`; muted text; hover darkens border') + '\n\n';
 
   const cardEN = components.cards || {};
   t += '## Cards\n\n';
-  t += '- **Style**: ' + (cardEN.style || 'Standard') + '\n';
-  t += '- **Appearance**: ' + (cardEN.appearance || 'Rounded corners with subtle elevation') + '\n';
-  t += '- **Interaction**: ' + (cardEN.interaction || 'Hover scale') + '\n\n';
+  t += '- **Style**: ' + cleanValue(cardEN.style, '`background: #fff`; `border-radius: ' + (radius.large || '16px') + '`; `box-shadow: 0 4px 12px rgba(0,0,0,0.08)`') + '\n';
+  t += '- **Appearance**: ' + cleanValue(cardEN.appearance, 'Rounded corners with subtle elevation, `padding: 20px 24px`') + '\n';
+  t += '- **Interaction**: ' + cleanValue(cardEN.interaction, 'Hover `transform: translateY(-2px)`; shadow intensifies; `transition: all 0.2s ease`') + '\n\n';
 
   const inputEN = components.inputs || {};
   t += '## Inputs\n\n';
-  t += '- **Normal**: ' + (inputEN.normal || 'Standard input styling') + '\n';
-  t += '- **Focus**: ' + (inputEN.focus || 'Border highlight on focus') + '\n\n';
+  t += '- **Normal**: ' + cleanValue(inputEN.normal, '`background: #fff`; `border: 1px solid #d1d5db`; `border-radius: ' + (radius.small || '6px') + '`; `padding: 8px 12px`') + '\n';
+  t += '- **Focus**: ' + cleanValue(inputEN.focus, 'Border highlights to `' + (colors.primary?.hex || '#6366f1') + '`; `box-shadow: 0 0 0 3px ' + (colors.primary?.hex || '#6366f1') + '33`') + '\n\n';
 
   t += '## Navigation\n\n';
-  t += (components.navigation || 'Top navigation bar') + '\n\n';
+  t += cleanValue(components.navigation, 'Fixed top nav; `background: ' + (colors.background || '#fff') + '`; `backdrop-filter: blur(8px)`; link color `' + (colors.foreground || '#374151') + '`; hover turns primary') + '\n\n';
 
   const sectionsEN = components.sections || {};
-  if (sectionsEN.divider_style || sectionsEN.background_strategy) {
-    t += '## Page Sections\n\n';
-    if (sectionsEN.divider_style) t += '- **Divider Style**: ' + sectionsEN.divider_style + '\n';
-    if (sectionsEN.background_strategy) t += '- **Background Strategy**: ' + sectionsEN.background_strategy + '\n';
-    t += '\n';
-  }
+  t += '## Page Sections\n\n';
+  t += '- **Divider Style**: ' + cleanValue(sectionsEN.divider_style || sectionsEN.divider, 'Spacing-based separation, optional `1px solid ' + (colors.border || '#e5e7eb') + '` hairline') + '\n';
+  t += '- **Background Strategy**: ' + cleanValue(sectionsEN.background_strategy, 'Alternating `' + (colors.background || '#fff') + '` and `' + (colors.muted || '#f9fafb') + '` for section rhythm') + '\n\n';
 
   // ── 4. Composition & Layout ──
   t += '---\n\n# Composition & Layout\n\n';
-  t += '- **Hierarchy Method**: ' + (composition.hierarchy_method || 'Scale contrast') + '\n';
-  t += '- **Balance Type**: ' + (composition.balance_type || 'Symmetric') + '\n';
-  t += '- **Flow Direction**: ' + (composition.flow_direction || 'Top-to-bottom') + '\n';
-  t += '- **Negative Space Role**: ' + (composition.negative_space_role || 'Functional spacing') + '\n\n';
+  t += '- **Hierarchy Method**: ' + cleanValue(composition.hierarchy_method, 'Scale contrast + color weight to establish visual hierarchy') + '\n';
+  t += '- **Balance Type**: ' + cleanValue(composition.balance_type, 'Centered symmetric') + '\n';
+  t += '- **Flow Direction**: ' + cleanValue(composition.flow_direction, 'Top-to-bottom, Z-pattern reading path') + '\n';
+  t += '- **Negative Space Role**: ' + cleanValue(composition.negative_space_role, 'Whitespace guides focus, sections breathe with generous margins') + '\n\n';
 
   // ── 5. Visual Effects ──
   const efxOverviewEN = effects.overview || {};

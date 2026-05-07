@@ -48,7 +48,7 @@ const server = createServer(async (req, res) => {
   const ext = extname(fullPath);
   const contentType = MIME_TYPES[ext] || 'text/plain';
   const content = readFileSync(fullPath);
-  res.writeHead(200, { 'Content-Type': contentType });
+  res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache, no-store, must-revalidate' });
   res.end(content);
 });
 
