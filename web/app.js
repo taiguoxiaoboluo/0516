@@ -250,6 +250,7 @@ function displayResult(profile) {
   renderColors(profile);
   renderTypography(profile);
   renderStyle(profile);
+  renderEvidence(profile);
 
   document.getElementById('jsonOutput').textContent = JSON.stringify(profile, null, 2);
   document.getElementById('promptOutput').textContent = generatePromptText(profile);
@@ -364,6 +365,76 @@ function renderStyle(profile) {
     row.innerHTML = '<span class="style-label">' + label + '</span><span class="style-value">' + value + '</span>';
     container.appendChild(row);
   });
+}
+
+// ===== Render Evidence =====
+function renderEvidence(profile) {
+  const evidence = profile.evidence;
+  const card = document.getElementById('evidenceCard');
+  const grid = document.getElementById('evidenceContent');
+  const effectsDiv = document.getElementById('effectsContent');
+  const colorSourcesDiv = document.getElementById('colorSourcesContent');
+
+  grid.innerHTML = '';
+  effectsDiv.innerHTML = '';
+  colorSourcesDiv.innerHTML = '';
+
+  if (!evidence || !evidence.screenshots?.length) {
+    card.hidden = true;
+    return;
+  }
+
+  card.hidden = false;
+
+  // 截图卡片
+  evidence.screenshots.forEach(shot => {
+    const item = document.createElement('div');
+    item.className = 'evidence-item';
+    item.innerHTML =
+      '<div class="evidence-img-wrap">' +
+        '<img src="' + shot.path + '" alt="' + shot.label + '" loading="lazy">' +
+      '</div>' +
+      '<div class="evidence-info">' +
+        '<div class="evidence-label">' + shot.label + '</div>' +
+        '<div class="evidence-description">' + shot.description + '</div>' +
+      '</div>';
+    grid.appendChild(item);
+  });
+
+  // 视觉特效检测
+  if (evidence.visualEffects?.length) {
+    effectsDiv.innerHTML = '<h5 class="evidence-subtitle">🎭 检测到的视觉特效</h5>';
+    const list = document.createElement('div');
+    list.className = 'effects-tags';
+    evidence.visualEffects.forEach(effect => {
+      const tag = document.createElement('div');
+      tag.className = 'effect-tag';
+      tag.innerHTML =
+        '<span class="effect-type">' + effect.type + '</span>' +
+        '<code class="effect-value">' + effect.value + '</code>' +
+        '<span class="effect-source">来源：&lt;' + effect.tag + '&gt;</span>';
+      list.appendChild(tag);
+    });
+    effectsDiv.appendChild(list);
+  }
+
+  // 颜色来源标注
+  if (evidence.colorSources?.length) {
+    colorSourcesDiv.innerHTML = '<h5 class="evidence-subtitle">🎨 颜色来源定位</h5>';
+    const list = document.createElement('div');
+    list.className = 'color-source-list';
+    evidence.colorSources.forEach(source => {
+      const item = document.createElement('div');
+      item.className = 'color-source-item';
+      item.innerHTML =
+        '<span class="color-source-swatch" style="background:' + source.color + '"></span>' +
+        '<span class="color-source-value">' + source.color + '</span>' +
+        '<span class="color-source-tag">&lt;' + source.tag + '&gt;</span>' +
+        '<span class="color-source-pos">位置：(' + Math.round(source.rect.x) + ', ' + Math.round(source.rect.y) + ') ' + Math.round(source.rect.w) + '×' + Math.round(source.rect.h) + 'px</span>';
+      list.appendChild(item);
+    });
+    colorSourcesDiv.appendChild(list);
+  }
 }
 
 // ===== Generate Prompt Text =====

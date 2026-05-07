@@ -35,8 +35,8 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Static files
-  let filePath = req.url === '/' ? '/index.html' : req.url;
+  // Static files (including snapshots directory)
+  let filePath = req.url === '/' ? '/index.html' : decodeURIComponent(req.url.split('?')[0]);
   const fullPath = join(currentDir, filePath);
 
   if (!existsSync(fullPath)) {
