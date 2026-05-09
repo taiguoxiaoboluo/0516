@@ -1,10 +1,36 @@
-<h1 align="center">🐕‍🦺 Style Sniffer · 风格嗅探器</h1>
+<h1 align="center">Style Sniffer · 风格嗅探器</h1>
 
 <p align="center">
   <a href="README.md">English</a> | 中文
 </p>
 
-从截图、图片或网页 URL 中提取视觉设计 DNA，输出结构化风格 Prompt。一条命令搞定。
+一个把网页、截图、图片里的视觉风格拆成结构化设计 DNA 的工具。它会提取色彩、字体、间距、圆角、阴影、组件气质和视觉特效，并生成可直接给 AI Agent / 前端生成器使用的风格 Prompt、JSON 画像与 CSS Token。
+
+![Style Sniffer 界面总览](docs/readme-assets/style-sniffer-overview.png)
+
+## 效果
+
+- 从网页 URL、截图或图片中提取视觉设计 DNA
+- 自动生成中英文双栏风格 Prompt，方便直接交给 Agent 复刻页面风格
+- 输出结构化 JSON，保留可追溯的设计 Token 与风格判断
+- 输出 CSS 变量，快速迁移色彩、字体、圆角、阴影和动效节奏
+- 提供溯源证据：逐屏截图 + 每个区域检测到的字体、颜色、混合模式、滤镜、毛玻璃等特征
+- 支持 CLI、Web UI、Agent Skill 三种入口
+
+## 适合 / 不适合
+
+适合：
+
+- 分析一个网站、落地页、作品集或产品页的视觉语言
+- 把参考截图整理成可复用的设计规范 / Prompt
+- 为 AI Agent 生成页面、PPT、HTML Demo 前准备风格上下文
+- 建立团队内部的风格资产库、案例库或设计 Token 记录
+
+不适合：
+
+- 不适合替代设计师的最终审美判断
+- 不适合从低清、遮挡严重或信息很少的截图里推断完整设计系统
+- 不适合直接处理需要登录、强风控或动态权限很重的页面
 
 ## 安装
 
@@ -20,11 +46,11 @@ npm install -g style-sniffer
 npx style-sniffer sniff example.com
 ```
 
-需要 Node.js 18+
+要求 Node.js 18 或更高版本。
 
 ## 使用方式
 
-### CLI（命令行）
+### CLI
 
 ```bash
 # 从 URL 提取设计风格
@@ -33,10 +59,13 @@ style-sniffer sniff example.com
 # 保存 JSON + Prompt 到 output/ 目录
 style-sniffer sniff example.com --save --prompt
 
+# 额外生成 CSS 变量
+style-sniffer sniff example.com --save --prompt --css
+
 # 仅输出原始 JSON
 style-sniffer sniff example.com --json-only
 
-# 使用移动端视口（390×844）
+# 使用移动端视口
 style-sniffer sniff example.com --mobile
 
 # 查看完整 Schema
@@ -46,68 +75,108 @@ style-sniffer schema
 style-sniffer generate profile.json --format prompt
 ```
 
-### Agent Skill（智能体技能）
+### Web UI
 
-安装到你的 AI 智能体：
+```bash
+npm install
+npm run web
+```
+
+浏览器打开 `http://localhost:3000`。
+
+Web UI 支持三种输入方式：网页 URL、图片 / 截图、已有 JSON。结果区可以一键复制 JSON、Prompt 和 CSS。
+
+![输入方式](docs/readme-assets/style-sniffer-input.png)
+
+### Agent Skill
+
+安装到你的 AI Agent：
 
 ```bash
 npx skills add style-sniffer
 ```
 
-然后对智能体说：*「提取 example.com 的设计风格」*
+然后对 Agent 说：
 
-### 网页界面
-
-```bash
-cd web && node server.js
+```text
+提取 https://example.com 的视觉风格，并生成可用于 HTML 页面的风格 Prompt。
 ```
 
-浏览器打开 `http://localhost:3000`
+## 使用流程
 
-## 三阶段工作流
+| 阶段 | 输入 | 输出 | 说明 |
+|---|---|---|---|
+| Structure | 无 | Schema 字段说明 | 先定义风格画像应该包含什么 |
+| Analyze | URL / 图片 / 截图 | Design Profile JSON | 提取颜色、字体、布局、组件、特效和视觉证据 |
+| Generate | JSON + 内容目标 | Prompt / CSS / HTML | 将设计 DNA 转成可复用生产材料 |
 
-```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│  Phase 1    │      │  Phase 2    │      │  Phase 3    │
-│  Structure  │ ───→ │  Analyze    │ ───→ │  Generate   │
-│  展示 Schema │      │  提取风格    │      │  生成产出    │
-└─────────────┘      └─────────────┘      └─────────────┘
-```
+## 产出长什么样
 
-| 阶段 | 输入 | 输出 |
-|------|------|------|
-| **Structure（结构）** | — | 完整 Schema 及字段说明 |
-| **Analyze（分析）** | URL / 图片 / 截图 | 设计画像 JSON |
-| **Generate（生成）** | JSON + 内容 | 风格 Prompt (.md) / CSS 变量 / HTML 页面 |
+### 风格 Prompt
+
+生成的 Prompt 会把设计哲学、Token、组件、视觉特效和使用指南整理成可投喂给 Agent 的说明。
+
+![生成的 Prompt](docs/readme-assets/style-sniffer-generated-prompt.png)
+
+### 色彩与风格画像
+
+Style Sniffer 会把原页面中的视觉信号归纳成调色板、风格标签、复杂度、留白策略和对比度策略。
+
+| 色彩 Token | 风格画像 |
+|---|---|
+| ![色彩 Token](docs/readme-assets/style-sniffer-colors.png) | ![风格画像](docs/readme-assets/style-sniffer-style-profile.png) |
+
+### 溯源证据
+
+每段判断都尽量回到页面截图和 DOM/CSS 特征，让你知道“为什么它判断这个页面是这种风格”。
+
+![溯源证据](docs/readme-assets/style-sniffer-evidence.png)
+
+更多截图见 [截图画廊](docs/demo-gallery.zh-CN.md)。
 
 ## 提取内容
 
-| 维度 | 包含 |
-|------|------|
-| **设计 Token** | 色彩调色板、字体排版、间距节奏、圆角、阴影、边框、动效 |
-| **设计风格** | 情绪、视觉语言、构图、图像风格、交互质感 |
-| **视觉特效** | 滚动动效、光标效果、玻璃拟态、粒子特效 |
-| **组件样式** | 按钮、卡片、输入框、导航、区块 |
+| 维度 | 会提取什么 |
+|---|---|
+| 色彩 | 背景色、前景色、主色、次色、强调色、语义色、完整色板 |
+| 字体 | 标题字体、正文字体、等宽字体、字号层级、字重、行高 |
+| 间距 | 密度、节奏、基础单位、区块间距 |
+| 形状 | 圆角层级、胶囊形态、边框策略 |
+| 阴影 | 阴影层级、深度线索、扩散方式 |
+| 组件 | 按钮、卡片、输入框、导航、页面区块 |
+| 风格 | 情绪、流派、视觉语言、构图、留白、对比度 |
+| 特效 | 滚动效果、光标效果、混合模式、滤镜、玻璃拟态、粒子等 |
 
-## 项目结构
+## 目录结构
 
-```
+```text
 style-sniffer/
 ├── bin/cli.js                  # CLI 入口
 ├── lib/
-│   ├── extract/from-url.js     # URL 提取（Playwright）
+│   ├── extract/from-url.js     # URL 提取，基于 Playwright
 │   ├── generate/
-│   │   ├── to-prompt-md.js     # JSON → 风格 Prompt
-│   │   └── to-css-vars.js      # JSON → CSS 变量
+│   │   ├── to-prompt-md.js     # JSON -> 风格 Prompt
+│   │   └── to-css-vars.js      # JSON -> CSS 变量
 │   └── schema/                 # Schema 定义
 ├── references/
-│   ├── schema.md               # 完整 Schema 文档
-│   └── generation-guide.md     # 生成指南
-├── web/                        # 网页界面
-├── SKILL.md                    # Agent Skill 入口
+│   ├── schema.zh-CN.md         # 中文 Schema 文档
+│   └── generation-guide.zh-CN.md
+├── web/                        # Web UI
+├── docs/
+│   ├── demo-gallery.zh-CN.md   # README 截图画廊
+│   └── readme-assets/          # README 截图资源
+├── SKILL.zh-CN.md              # Agent Skill 中文入口
 └── package.json
 ```
 
-## 许可证
+## 核心原则
+
+1. 先结构化，再生成：先把风格拆成 JSON，再进入 Prompt / CSS / HTML 生成。
+2. 设计判断要可追溯：颜色、字体、阴影、滤镜等判断尽量有截图或 CSS 证据。
+3. Token 优先：颜色、字体、圆角、阴影、间距应尽量被变量化。
+4. Prompt 可执行：输出不是空泛审美词，而是能指导 Agent 落地页面的规则。
+5. 保留风格，不复制内容：目标是复用视觉语言，不是搬运原网站文本和资产。
+
+## License
 
 MIT
