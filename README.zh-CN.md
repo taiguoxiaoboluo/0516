@@ -6,7 +6,36 @@
 
 一个把网页、截图、图片里的视觉风格拆成结构化设计 DNA 的工具。它会提取色彩、字体、间距、圆角、阴影、组件气质和视觉特效，并生成可直接给 AI Agent / 前端生成器使用的风格 Prompt、JSON 画像与 CSS Token。
 
-![Style Sniffer 界面总览](docs/readme-assets/style-sniffer-overview.png)
+## 快速使用入口
+
+最快打开网页界面：
+
+[打开本地 Web UI：web/index.html](web/index.html)
+
+如果要使用完整的网页分析能力，建议用服务方式启动：
+
+```bash
+cd 自制工具/style-sniffer
+npm install
+npm run web
+```
+
+然后打开 `http://localhost:3000`。如果 `3000` 端口被占用，会自动尝试 `3001`、`3002` 等后续端口。
+
+你也可以把它作为命令行工具使用：
+
+```bash
+npm install -g style-sniffer
+style-sniffer sniff example.com --save --prompt
+```
+
+常见使用方式有三种：
+
+- 网页界面：适合直接粘贴 URL、图片或已有 JSON，并复制生成的 JSON / Prompt / CSS。
+- 全局安装：适合在任意目录用 `style-sniffer sniff ...` 快速分析网页。
+- Agent Skill：适合让 AI Agent 调用风格嗅探能力，把参考页面整理成可复用的风格 Prompt。
+
+![Style Sniffer 界面总览](./docs/readme-assets/style-sniffer-overview.png)
 
 ## 效果
 
@@ -86,7 +115,7 @@ npm run web
 
 Web UI 支持三种输入方式：网页 URL、图片 / 截图、已有 JSON。结果区可以一键复制 JSON、Prompt 和 CSS。
 
-![输入方式](docs/readme-assets/style-sniffer-input.png)
+![输入方式](./docs/readme-assets/style-sniffer-input.png)
 
 ### Agent Skill
 
@@ -114,9 +143,9 @@ npx skills add style-sniffer
 
 ### 风格 Prompt
 
-生成的 Prompt 会把设计哲学、Token、组件、视觉特效和使用指南整理成可投喂给 Agent 的说明。
+嗅探完成后会生成中英文双栏 Prompt，可直接复制给 AI Agent 或页面生成流程。
 
-![生成的 Prompt](docs/readme-assets/style-sniffer-generated-prompt.png)
+![生成的 Prompt](./docs/readme-assets/style-sniffer-generated-prompt.png)
 
 ### 色彩与风格画像
 
@@ -124,15 +153,13 @@ Style Sniffer 会把原页面中的视觉信号归纳成调色板、风格标签
 
 | 色彩 Token | 风格画像 |
 |---|---|
-| ![色彩 Token](docs/readme-assets/style-sniffer-colors.png) | ![风格画像](docs/readme-assets/style-sniffer-style-profile.png) |
+| ![色彩 Token](./docs/readme-assets/style-sniffer-colors.png) | ![风格画像](./docs/readme-assets/style-sniffer-style-profile.png) |
 
 ### 溯源证据
 
 每段判断都尽量回到页面截图和 DOM/CSS 特征，让你知道“为什么它判断这个页面是这种风格”。
 
-![溯源证据](docs/readme-assets/style-sniffer-evidence.png)
-
-更多截图见 [截图画廊](docs/demo-gallery.zh-CN.md)。
+![溯源证据](./docs/readme-assets/style-sniffer-evidence.png)
 
 ## 提取内容
 
@@ -163,7 +190,6 @@ style-sniffer/
 │   └── generation-guide.zh-CN.md
 ├── web/                        # Web UI
 ├── docs/
-│   ├── demo-gallery.zh-CN.md   # README 截图画廊
 │   └── readme-assets/          # README 截图资源
 ├── SKILL.zh-CN.md              # Agent Skill 中文入口
 └── package.json
