@@ -4,6 +4,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
+    PORT=7860 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
@@ -14,6 +15,6 @@ COPY --chown=pwuser:pwuser . .
 
 USER pwuser
 
-EXPOSE 3000
+EXPOSE 7860
 
 CMD ["npm", "run", "web:public"]
