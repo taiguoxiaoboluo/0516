@@ -10,6 +10,8 @@
 
 想发给别人快速用，直接看：[快速给别人用](./QUICKSTART.zh-CN.md)
 
+想让别人下载后自己本地运行，看：[给别人本地运行的超简单说明](./LOCAL_RUN_FOR_BEGINNERS.zh-CN.md)
+
 想让线上也支持网页 URL 嗅探，看：[部署后端服务](./BACKEND_DEPLOY.zh-CN.md)
 
 不想绑定信用卡，优先看：[用 Hugging Face Spaces 部署](./HF_SPACES_DEPLOY.zh-CN.md)
