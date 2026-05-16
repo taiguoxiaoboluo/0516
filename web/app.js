@@ -9,7 +9,10 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // ===== 检测是否有后端服务器（GitHub Pages / 静态文件 vs 本地服务）=====
-const isStaticMode = location.protocol === 'file:' || location.hostname.includes('github.io') || location.hostname.includes('pages.dev');
+const isStaticMode = location.protocol === 'file:'
+  || location.hostname.includes('github.io')
+  || location.hostname.includes('pages.dev')
+  || location.hostname.includes('netlify.app');
 let backendBase = '';
 let hasUrlBackend = !isStaticMode;
 
@@ -96,7 +99,7 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
     displayResult(result);
   } catch (error) {
     if (error.message === 'Failed to fetch' || error.message === 'URL_BACKEND_UNAVAILABLE') {
-      showToast('⚠️ URL 嗅探需要本地服务器。请使用「图片/截图」功能，或本地运行 node web/server.js');
+      showToast('⚠️ 在线版只能直接分析图片。网页 URL 嗅探请在本地运行 npm run web');
     } else {
       showToast('错误：' + error.message);
     }
