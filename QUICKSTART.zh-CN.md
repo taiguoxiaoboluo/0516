@@ -1,18 +1,34 @@
 # Style Sniffer 快速给别人用
 
-## 方式 1：在线网页，最快
+## 方式 1：在线网页，最快但只适合图片
 
 适合让别人上传图片 / 截图分析。
 
-1. 打开 https://app.netlify.com/drop
-2. 把项目里的 `web` 文件夹拖进去
-3. 把生成的网址发给别人
+打开这个网址：
 
-说明：这种方式不需要服务器，图片分析可用；输入 URL 分析网页需要方式 2。
+```text
+https://cool-lamington-b047c4.netlify.app
+```
+
+说明：在线网页不用安装，图片分析可用；输入 URL 分析网页需要方式 2。
 
 ## 方式 2：本地 Web，功能完整
 
-适合自己或同事在电脑上跑，支持图片分析和 URL 网页分析。
+适合自己或同事在电脑上跑，支持图片分析和 URL 网页 / HTML 分析。
+
+先安装 Node.js：
+
+```text
+https://nodejs.org
+```
+
+然后下载 GitHub 项目：
+
+```text
+https://github.com/taiguoxiaoboluo/0516
+```
+
+解压后，在项目文件夹里运行：
 
 ```bash
 npm install
@@ -25,7 +41,7 @@ npm run web
 http://127.0.0.1:3000
 ```
 
-如果想让同一 Wi-Fi 下的人访问：
+如果想让同一 Wi-Fi 下的人访问你电脑上的服务：
 
 ```bash
 npm run web:public
@@ -33,11 +49,9 @@ npm run web:public
 
 把终端里显示的内网地址发给对方。
 
-## 方式 3：命令行
+## 方式 3：命令行，适合会用终端的人
 
-适合会用终端的人。
-
-在项目目录里先安装成全局命令：
+在项目目录里安装成全局命令：
 
 ```bash
 npm install -g .
@@ -64,5 +78,5 @@ style-sniffer schema
 ## 可以直接发给别人的一句话
 
 ```text
-先装 Node.js，然后在项目目录运行 npm install 和 npm run web，打开终端里显示的网址；如果只想上传截图分析，也可以直接打开在线网页版本。
+只上传截图就打开 https://cool-lamington-b047c4.netlify.app；如果要输入网页 URL 分析 HTML/CSS，就先装 Node.js，下载项目后运行 npm install 和 npm run web，再打开 http://127.0.0.1:3000。
 ```

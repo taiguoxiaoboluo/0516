@@ -4,25 +4,34 @@
   English | <a href="README.zh-CN.md">中文</a>
 </p>
 
-Extract any design's visual DNA into structured style prompts. From screenshots, images, or URLs — one command.
+Extract visual design DNA into structured style prompts. The hosted page works for screenshots/images; URL and HTML analysis should be run locally.
 
-## Install
+## Quick Start
+
+Hosted image-only page:
+
+[https://cool-lamington-b047c4.netlify.app](https://cool-lamington-b047c4.netlify.app)
+
+For full URL / HTML analysis, download the GitHub project, install dependencies, and start the local web server:
 
 ```bash
-npm install -g style-sniffer
+npm install
+npm run web
 ```
 
-Or use npx:
+Then open `http://localhost:3000`.
 
-```bash
-npx style-sniffer sniff example.com
-```
-
-Requires Node.js 18+
+Requires Node.js 18+.
 
 ## Usage
 
 ### CLI
+
+To use the `style-sniffer` command from this project folder:
+
+```bash
+npm install -g .
+```
 
 ```bash
 # Extract design from a URL
@@ -57,7 +66,8 @@ Then ask your agent: *"Extract the style from example.com"*
 ### Web UI
 
 ```bash
-cd web && node server.js
+npm install
+npm run web
 ```
 
 Opens at `http://localhost:3000`

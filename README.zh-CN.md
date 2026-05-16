@@ -12,13 +12,11 @@
 
 想让别人下载后自己本地运行，看：[给别人本地运行的超简单说明](./LOCAL_RUN_FOR_BEGINNERS.zh-CN.md)
 
-想让线上也支持网页 URL 嗅探，看：[部署后端服务](./BACKEND_DEPLOY.zh-CN.md)
+在线图片版：
 
-不想绑定信用卡，优先看：[用 Hugging Face Spaces 部署](./HF_SPACES_DEPLOY.zh-CN.md)
+[https://cool-lamington-b047c4.netlify.app](https://cool-lamington-b047c4.netlify.app)
 
-最快打开网页界面：
-
-[打开本地 Web UI：web/index.html](web/index.html)
+说明：在线版适合上传图片 / 截图分析；网页 URL / HTML 分析需要本地运行。
 
 如果要使用完整的网页分析能力，建议用服务方式启动：
 
@@ -33,15 +31,15 @@ npm run web
 你也可以把它作为命令行工具使用：
 
 ```bash
-npm install -g style-sniffer
+npm install -g .
 style-sniffer sniff example.com --save --prompt
 ```
 
 常见使用方式有三种：
 
-- 网页界面：适合直接粘贴 URL、图片或已有 JSON，并复制生成的 JSON / Prompt / CSS。
-- 全局安装：适合在任意目录用 `style-sniffer sniff ...` 快速分析网页。
-- Agent Skill：适合让 AI Agent 调用风格嗅探能力，把参考页面整理成可复用的风格 Prompt。
+- 在线网页：适合上传图片 / 截图，并复制生成的 JSON / Prompt / CSS。
+- 本地 Web：适合输入网页 URL，读取 HTML / CSS 并分析风格。
+- 命令行 / Agent Skill：适合会用终端或 AI Agent 的人。
 
 ![Style Sniffer 界面总览](./docs/readme-assets/style-sniffer-overview.png)
 
@@ -71,16 +69,16 @@ style-sniffer sniff example.com --save --prompt
 
 ## 安装
 
-全局安装：
+推荐直接从 GitHub 下载项目：
 
-```bash
-npm install -g style-sniffer
+```text
+https://github.com/taiguoxiaoboluo/0516
 ```
 
-或使用 npx 免安装运行：
+下载并解压后，在项目目录里安装依赖：
 
 ```bash
-npx style-sniffer sniff example.com
+npm install
 ```
 
 要求 Node.js 18 或更高版本。
@@ -88,6 +86,12 @@ npx style-sniffer sniff example.com
 ## 使用方式
 
 ### CLI
+
+如果想使用 `style-sniffer` 命令，先在项目目录里安装成全局命令：
+
+```bash
+npm install -g .
+```
 
 ```bash
 # 从 URL 提取设计风格
@@ -121,7 +125,7 @@ npm run web
 
 浏览器打开 `http://localhost:3000`。
 
-Web UI 支持三种输入方式：网页 URL、图片 / 截图、已有 JSON。结果区可以一键复制 JSON、Prompt 和 CSS。
+本地 Web UI 支持三种输入方式：网页 URL、图片 / 截图、已有 JSON。结果区可以一键复制 JSON、Prompt 和 CSS。
 
 ![输入方式](./docs/readme-assets/style-sniffer-input.png)
 
