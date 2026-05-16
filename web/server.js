@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 import { networkInterfaces } from 'os';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '127.0.0.1';
+const START_PORT = Number(process.env.PORT || 3000);
+const MAX_PORT_ATTEMPTS = Number(process.env.PORT_ATTEMPTS || 20);
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -16,7 +18,32 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml'
 };
 
+function writeJson(res, statusCode, data) {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+  });
+  res.end(JSON.stringify(data));
+}
+
 const server = createServer(async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+    });
+    res.end();
+    return;
+  }
+
+  if (req.method === 'GET' && req.url === '/api/health') {
+    writeJson(res, 200, { ok: true, service: 'style-sniffer' });
+    return;
+  }
+
   // API endpoint
   if (req.method === 'POST' && req.url === '/api/sniff') {
     let body = '';
@@ -26,11 +53,9 @@ const server = createServer(async (req, res) => {
         const { url, darkMode, mobile } = JSON.parse(body);
         const { extract } = await import('../lib/extract/from-url.js');
         const result = await extract(url, { darkMode, mobile });
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
+        writeJson(res, 200, result);
       } catch (error) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: error.message }));
+        writeJson(res, 500, { error: error.message });
       }
     });
     return;
@@ -53,16 +78,39 @@ const server = createServer(async (req, res) => {
   res.end(content);
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🐕‍🦺 Style Sniffer Web UI`);
-  console.log(`   本机：http://localhost:${PORT}`);
-  // 获取内网 IP 方便分享
-  const nets = networkInterfaces();
-  Object.values(nets).flat().filter(n => n.family === 'IPv4' && !n.internal).forEach(n => {
-    console.log(`   内网：http://${n.address}:${PORT}`);
-  });
-  console.log('');
+let attemptsLeft = MAX_PORT_ATTEMPTS;
+let activePort = START_PORT;
+
+server.on('listening', () => {
+  printReady(activePort);
 });
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE' && !process.env.PORT && attemptsLeft > 1) {
+    attemptsLeft -= 1;
+    activePort += 1;
+    console.warn(`端口 ${activePort - 1} 已被占用，尝试 ${activePort}...`);
+    server.listen(activePort, HOST);
+    return;
+  }
+  console.error(`[server] ${error.code || 'ERROR'}: ${error.message}`);
+  process.exitCode = 1;
+});
+
+server.listen(activePort, HOST);
+
+function printReady(port) {
+  console.log(`\n🐕‍🦺 Style Sniffer Web UI`);
+  console.log(`   本机：http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${port}`);
+  // 获取内网 IP 方便分享
+  if (HOST === '0.0.0.0') {
+    const nets = networkInterfaces();
+    Object.values(nets).flat().filter(n => n.family === 'IPv4' && !n.internal).forEach(n => {
+      console.log(`   内网：http://${n.address}:${port}`);
+    });
+  }
+  console.log('');
+}
 
 // 防止未捕获异常导致进程退出
 process.on('uncaughtException', (err) => {

@@ -8,6 +8,8 @@
 
 ## 快速使用入口
 
+想发给别人快速用，直接看：[快速给别人用](./QUICKSTART.zh-CN.md)
+
 最快打开网页界面：
 
 [打开本地 Web UI：web/index.html](web/index.html)

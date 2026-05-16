@@ -8,14 +8,50 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// ===== 检测是否有后端服务器（GitHub Pages 模式 vs 本地模式）=====
+// ===== 检测是否有后端服务器（GitHub Pages / 静态文件 vs 本地服务）=====
 const isStaticMode = location.protocol === 'file:' || location.hostname.includes('github.io') || location.hostname.includes('pages.dev');
+let backendBase = '';
+let hasUrlBackend = !isStaticMode;
 
-(function initUrlTab() {
+function setUrlNoticeVisible(visible) {
   const urlNotice = document.getElementById('urlServerNotice');
-  if (isStaticMode && urlNotice) {
-    urlNotice.hidden = false;
+  if (!urlNotice) return;
+  urlNotice.hidden = !visible;
+  urlNotice.style.display = visible ? '' : 'none';
+}
+
+function fetchWithTimeout(url, options = {}, timeout = 600) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+async function detectUrlBackend() {
+  const localCandidates = Array.from({ length: 21 }, (_, index) => `http://127.0.0.1:${3000 + index}`);
+
+  for (const base of localCandidates) {
+    try {
+      const response = await fetchWithTimeout(`${base}/api/health`);
+      if (!response.ok) continue;
+      const data = await response.json();
+      if (data.ok && data.service === 'style-sniffer') return base;
+    } catch (_) {
+      // Try the next local port.
+    }
   }
+  return null;
+}
+
+(async function initUrlTab() {
+  if (!isStaticMode) {
+    setUrlNoticeVisible(false);
+    return;
+  }
+
+  const detectedBackend = await detectUrlBackend();
+  hasUrlBackend = Boolean(detectedBackend);
+  backendBase = detectedBackend || '';
+  setUrlNoticeVisible(!hasUrlBackend);
 })();
 
 // ===== URL Sniff =====
@@ -41,7 +77,8 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
     let response, lastError;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        response = await fetch('/api/sniff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+        if (!hasUrlBackend) throw new Error('URL_BACKEND_UNAVAILABLE');
+        response = await fetch(`${backendBase}/api/sniff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
         if (response.ok) break;
         lastError = new Error('服务端返回 ' + response.status);
       } catch (fetchErr) {
@@ -58,7 +95,7 @@ document.getElementById('sniffBtn').addEventListener('click', async () => {
     if (result.error) throw new Error(result.error);
     displayResult(result);
   } catch (error) {
-    if (error.message === 'Failed to fetch' || isStaticMode) {
+    if (error.message === 'Failed to fetch' || error.message === 'URL_BACKEND_UNAVAILABLE') {
       showToast('⚠️ URL 嗅探需要本地服务器。请使用「图片/截图」功能，或本地运行 node web/server.js');
     } else {
       showToast('错误：' + error.message);

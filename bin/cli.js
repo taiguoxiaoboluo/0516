@@ -49,6 +49,17 @@ program
   });
 
 program
+  .command('web')
+  .description('Start the local Web UI')
+  .option('--host <host>', 'Host to bind', process.env.HOST || '127.0.0.1')
+  .option('--port <port>', 'Starting port', process.env.PORT || '3000')
+  .action(async (options) => {
+    process.env.HOST = options.host;
+    process.env.PORT = String(options.port);
+    await import('../web/server.js');
+  });
+
+program
   .command('schema')
   .description('Show the full Style Sniffer schema')
   .action(() => {
