@@ -12,49 +12,39 @@ https://cool-lamington-b047c4.netlify.app
 
 说明：在线网页不用安装，图片分析可用；输入 URL 分析网页需要方式 2。
 
-## 方式 2：本地 Web，功能完整但只要三步
+## 方式 2：免安装本地工具包，功能完整
 
-适合自己或同事在电脑上跑，支持图片分析和 URL 网页 / HTML 分析。
+适合让别人输入网页 URL，读取 HTML / CSS 并分析风格。
 
-### 1. 先下载两个东西
+普通用户不需要额外安装任何东西。
 
-安装：[Node.js 安装包](https://nodejs.org)
+他们只需要：
 
-下载：[项目包](https://github.com/taiguoxiaoboluo/0516/archive/refs/heads/main.zip)
+1. 解压你发给他的工具包
+2. 双击 `启动 Style Sniffer.command`
+3. 浏览器打开后粘贴网页 URL
 
-Node.js 选择 LTS 版本。项目包下载后解压。
-
-### 2. 让终端进入项目文件夹，然后复制两行命令
-
-Mac：
-
-1. 打开 Mac 自带的「终端」App
-2. 输入 `cd`，然后再输入一个空格
-3. 把解压后的项目文件夹拖进终端窗口
-4. 按回车
-
-Windows：在文件夹地址栏输入 `cmd`，然后回车。
-
-在终端里复制运行：
-
-```bash
-npm install
-npm run web
-```
-
-### 3. 回到浏览器打开本地网页
+如果浏览器没有自动打开，手动打开：
 
 ```text
 http://127.0.0.1:3000
 ```
 
-如果想让同一 Wi-Fi 下的人访问你电脑上的服务：
+## 你如何生成这个工具包
+
+在你的项目目录里运行：
 
 ```bash
-npm run web:public
+npm run package:mac
 ```
 
-把终端里显示的内网地址发给对方。
+生成后会出现在：
+
+```text
+dist/Style Sniffer 本地工具-mac-arm64
+```
+
+这个文件夹就是给普通用户的免安装工具包。
 
 ## 方式 3：命令行，适合会用终端的人
 
@@ -85,5 +75,5 @@ style-sniffer schema
 ## 可以直接发给别人的一句话
 
 ```text
-只上传截图就打开 https://cool-lamington-b047c4.netlify.app；如果要输入网页 URL 分析 HTML/CSS，就先装 Node.js，再下载项目包，在项目文件夹里复制运行 npm install 和 npm run web，最后打开 http://127.0.0.1:3000。
+只上传截图就打开 https://cool-lamington-b047c4.netlify.app；如果要输入网页 URL 分析 HTML/CSS，就解压免安装工具包，双击「启动 Style Sniffer.command」，浏览器打开后粘贴网页 URL。
 ```

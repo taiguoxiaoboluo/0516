@@ -12,6 +12,7 @@
     "cli": "node bin/cli.js",
     "web": "node bin/cli.js web",
     "web:public": "node bin/cli.js web --host 0.0.0.0",
+    "package:mac": "node scripts/build-mac-portable.js",
     "test": "node test/run.js"
   },
   "keywords": [
