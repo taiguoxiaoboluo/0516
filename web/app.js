@@ -1,11 +1,15 @@
 // ===== Tab Switching =====
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+function activateTab(tabName) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tabName);
   });
+  document.querySelectorAll('.tab-content').forEach(c => {
+    c.classList.toggle('active', c.id === 'tab-' + tabName);
+  });
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => activateTab(tab.dataset.tab));
 });
 
 // ===== 检测是否有后端服务器（GitHub Pages / 静态文件 vs 本地服务）=====
@@ -21,6 +25,24 @@ function setUrlNoticeVisible(visible) {
   if (!urlNotice) return;
   urlNotice.hidden = !visible;
   urlNotice.style.display = visible ? '' : 'none';
+}
+
+function setUrlControlsEnabled(enabled) {
+  const urlInput = document.getElementById('urlInput');
+  const sniffBtn = document.getElementById('sniffBtn');
+  const darkMode = document.getElementById('optDarkMode');
+  const mobile = document.getElementById('optMobile');
+
+  if (urlInput) {
+    urlInput.disabled = !enabled;
+    urlInput.placeholder = enabled ? 'https://example.com' : '在线版请切到「图片 / 截图」；本地运行后可用';
+  }
+  if (sniffBtn) {
+    sniffBtn.disabled = !enabled;
+    sniffBtn.textContent = enabled ? '开始嗅探 🐕‍🦺' : '本地版可用';
+  }
+  if (darkMode) darkMode.disabled = !enabled;
+  if (mobile) mobile.disabled = !enabled;
 }
 
 function fetchWithTimeout(url, options = {}, timeout = 600) {
@@ -48,13 +70,19 @@ async function detectUrlBackend() {
 (async function initUrlTab() {
   if (!isStaticMode) {
     setUrlNoticeVisible(false);
+    setUrlControlsEnabled(true);
     return;
   }
+
+  setUrlNoticeVisible(true);
+  setUrlControlsEnabled(false);
+  activateTab('image');
 
   const detectedBackend = await detectUrlBackend();
   hasUrlBackend = Boolean(detectedBackend);
   backendBase = detectedBackend || '';
   setUrlNoticeVisible(!hasUrlBackend);
+  setUrlControlsEnabled(hasUrlBackend);
 })();
 
 // ===== URL Sniff =====

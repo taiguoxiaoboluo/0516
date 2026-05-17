@@ -15,6 +15,36 @@
   </header>
 
   <main class="main">
+    <!-- 使用说明 -->
+    <section class="how-to-section" aria-labelledby="howToTitle">
+      <div class="how-to-heading">
+        <p class="eyebrow">先看这里</p>
+        <h3 id="howToTitle">按你的使用方式选择入口</h3>
+      </div>
+      <div class="usage-grid">
+        <div class="usage-panel usage-panel-primary">
+          <div class="usage-label">在线网页</div>
+          <h4>只分析图片 / 截图</h4>
+          <ol class="usage-steps">
+            <li>点「图片 / 截图」</li>
+            <li>上传网页截图或设计图</li>
+            <li>点「开始嗅探」</li>
+            <li>复制 Prompt / CSS / JSON</li>
+          </ol>
+        </div>
+        <div class="usage-panel">
+          <div class="usage-label">本地小服务</div>
+          <h4>分析网页 URL / HTML</h4>
+          <ol class="usage-steps">
+            <li>先安装 Node.js</li>
+            <li>在项目文件夹运行 <code>npm install</code></li>
+            <li>再运行 <code>npm run web</code></li>
+            <li>打开 <code>http://127.0.0.1:3000</code></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
     <!-- 输入区 -->
     <section class="input-section">
       <div class="input-card">
@@ -28,8 +58,13 @@
         <!-- URL Tab -->
         <div class="tab-content active" id="tab-url">
           <div class="url-notice" id="urlServerNotice" hidden>
-            <p>⚠️ URL 嗅探需要本地 Node.js 服务器支持。在线版请使用 <strong>「图片/截图」</strong> 功能。</p>
-            <p style="font-size:12px;opacity:0.7;margin-top:4px;">本地运行：<code>git clone → npm install → npm run web</code></p>
+            <p><strong>当前在线版不能直接读取网页 URL / HTML。</strong></p>
+            <p>现在要用，请切到 <strong>「图片 / 截图」</strong> 上传截图分析。</p>
+            <p class="notice-muted">要分析网页 URL：下载项目后，在本地运行 <code>npm install</code> 和 <code>npm run web</code>。</p>
+          </div>
+          <div class="tab-helper">
+            <h4>网页 URL 怎么用</h4>
+            <p>本地运行后，在这里粘贴网页地址，例如 <code>https://example.com</code>，工具会打开页面并读取 HTML / CSS 风格。</p>
           </div>
           <div class="url-input-wrap">
             <input type="text" id="urlInput" placeholder="https://example.com" class="url-input">
@@ -43,6 +78,10 @@
 
         <!-- Image Tab -->
         <div class="tab-content" id="tab-image">
+          <div class="tab-helper">
+            <h4>图片 / 截图怎么用</h4>
+            <p>把网页截图、设计稿或参考图片拖进来，点击「开始嗅探」，即可得到颜色、风格 Prompt 和 CSS Token。</p>
+          </div>
           <div class="drop-zone" id="dropZone">
             <div class="drop-zone-inner" id="dropZoneInner">
               <span class="drop-icon">📸</span>
@@ -59,6 +98,10 @@
 
         <!-- JSON Tab -->
         <div class="tab-content" id="tab-json">
+          <div class="tab-helper">
+            <h4>JSON 怎么用</h4>
+            <p>如果你已经有 Style Sniffer 的 JSON 结果，把它粘贴到这里，可以重新生成 Prompt。</p>
+          </div>
           <textarea id="jsonInput" class="json-textarea" placeholder="粘贴 Style Sniffer JSON 画像到此处..."></textarea>
           <button id="generateBtn" class="btn-primary">生成 Prompt</button>
         </div>
