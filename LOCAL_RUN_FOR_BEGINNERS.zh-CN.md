@@ -10,25 +10,19 @@
 
 电脑里需要安装 Node.js。
 
-下载地址：
+点击这里安装：[Node.js](https://nodejs.org)
 
-```text
-https://nodejs.org
-```
-
-进入网站后，下载 LTS 版本并安装即可。
+进入网站后，选择 LTS 版本下载并安装即可。
 
 ## 方式一：从 GitHub 下载
 
-打开这个地址：
-
-```text
-https://github.com/taiguoxiaoboluo/0516
-```
+打开这个地址：[https://github.com/taiguoxiaoboluo/0516](https://github.com/taiguoxiaoboluo/0516)
 
 点击绿色的 **Code** 按钮，然后点 **Download ZIP**。
 
 下载完成后，把压缩包解压。
+
+也可以直接点这个下载项目包：[Download ZIP](https://github.com/taiguoxiaoboluo/0516/archive/refs/heads/main.zip)
 
 ## 方式二：别人直接发你压缩包
 

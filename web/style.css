@@ -126,13 +126,81 @@ body {
 }
 .usage-steps li + li { margin-top: 5px; }
 .usage-steps code,
-.tab-helper code {
+.tab-helper code,
+.beginner-step code {
   background: rgba(0,0,0,0.06);
   color: var(--color-text);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 12px;
+}
+.beginner-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.beginner-step {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 8px;
+  align-items: start;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-muted);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.inline-link {
+  color: var(--color-primary-hover);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.command-group {
+  min-width: 0;
+}
+.command-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #f8fafc;
+}
+.command-row code {
+  background: transparent;
+  padding: 0;
+  font-size: 13px;
+}
+.copy-command {
+  min-width: 48px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.copy-command:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 /* ===== Input Section ===== */

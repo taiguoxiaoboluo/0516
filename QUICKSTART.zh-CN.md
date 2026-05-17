@@ -16,17 +16,11 @@ https://cool-lamington-b047c4.netlify.app
 
 适合自己或同事在电脑上跑，支持图片分析和 URL 网页 / HTML 分析。
 
-先安装 Node.js：
+先点击安装：[Node.js](https://nodejs.org)
 
-```text
-https://nodejs.org
-```
+然后下载项目包：
 
-然后下载 GitHub 项目：
-
-```text
-https://github.com/taiguoxiaoboluo/0516
-```
+[Download ZIP](https://github.com/taiguoxiaoboluo/0516/archive/refs/heads/main.zip)
 
 解压后，在项目文件夹里运行：
 

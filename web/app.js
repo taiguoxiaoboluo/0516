@@ -12,6 +12,19 @@ document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => activateTab(tab.dataset.tab));
 });
 
+document.querySelectorAll('.copy-command').forEach(button => {
+  button.addEventListener('click', async () => {
+    const text = button.dataset.copy;
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = '已复制';
+      setTimeout(() => { button.textContent = '复制'; }, 1200);
+    } catch (_) {
+      showToast('复制失败，请手动选中命令复制');
+    }
+  });
+});
+
 // ===== 检测是否有后端服务器（GitHub Pages / 静态文件 vs 本地服务）=====
 const isStaticMode = location.protocol === 'file:'
   || location.hostname.includes('github.io')
