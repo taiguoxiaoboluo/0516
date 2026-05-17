@@ -148,6 +148,10 @@ body {
   color: var(--color-text-secondary);
   font-size: 13px;
 }
+.beginner-step strong {
+  color: var(--color-text);
+  font-weight: 700;
+}
 .step-number {
   display: inline-flex;
   align-items: center;
@@ -168,6 +172,11 @@ body {
 }
 .command-group {
   min-width: 0;
+}
+.small-note {
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
 }
 .command-row {
   display: flex;

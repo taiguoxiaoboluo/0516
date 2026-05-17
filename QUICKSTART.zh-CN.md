@@ -12,24 +12,32 @@ https://cool-lamington-b047c4.netlify.app
 
 说明：在线网页不用安装，图片分析可用；输入 URL 分析网页需要方式 2。
 
-## 方式 2：本地 Web，功能完整
+## 方式 2：本地 Web，功能完整但只要三步
 
 适合自己或同事在电脑上跑，支持图片分析和 URL 网页 / HTML 分析。
 
-先点击安装：[Node.js](https://nodejs.org)
+### 1. 先下载两个东西
 
-然后下载项目包：
+安装：[Node.js 安装包](https://nodejs.org)
 
-[Download ZIP](https://github.com/taiguoxiaoboluo/0516/archive/refs/heads/main.zip)
+下载：[项目包](https://github.com/taiguoxiaoboluo/0516/archive/refs/heads/main.zip)
 
-解压后，在项目文件夹里运行：
+Node.js 选择 LTS 版本。项目包下载后解压。
+
+### 2. 在项目文件夹里复制两行命令
+
+Mac：在文件夹空白处右键，选择“新建位于文件夹位置的终端窗口”。
+
+Windows：在文件夹地址栏输入 `cmd`，然后回车。
+
+在终端里复制运行：
 
 ```bash
 npm install
 npm run web
 ```
 
-然后打开终端里显示的本机地址，通常是：
+### 3. 回到浏览器打开本地网页
 
 ```text
 http://127.0.0.1:3000
@@ -72,5 +80,5 @@ style-sniffer schema
 ## 可以直接发给别人的一句话
 
 ```text
-只上传截图就打开 https://cool-lamington-b047c4.netlify.app；如果要输入网页 URL 分析 HTML/CSS，就先装 Node.js，下载项目后运行 npm install 和 npm run web，再打开 http://127.0.0.1:3000。
+只上传截图就打开 https://cool-lamington-b047c4.netlify.app；如果要输入网页 URL 分析 HTML/CSS，就先装 Node.js，再下载项目包，在项目文件夹里复制运行 npm install 和 npm run web，最后打开 http://127.0.0.1:3000。
 ```
